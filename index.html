@@ -104,7 +104,7 @@
             transform: rotateY(180deg);
         }
         .hanzi { font-size: 4em; font-weight: bold; margin-bottom: 10px; color: #2c3e50; }
-        .pinyin { font-size: 1.5em; color: #7f8c8d; }
+        .pinyin { font-size: 1.5em; color: #7f8c8d; transition: opacity 0.3s; }
         .type-badge { 
             background-color: #f1c40f; 
             color: #333; 
@@ -133,6 +133,27 @@
         }
         .nav-btn:hover { background-color: #1a252f; }
         .card-progress { font-weight: bold; color: #7f8c8d; }
+
+        .action-btns {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .action-btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .btn-shuffle { background-color: #9b59b6; color: white; }
+        .btn-shuffle:hover { background-color: #8e44ad; }
+        .btn-pinyin { background-color: #e67e22; color: white; }
+        .btn-pinyin:hover { background-color: #d35400; }
+        .btn-pinyin.off { background-color: #95a5a6; }
 
         /* --- 모드 2: 4지선다 퀴즈 스타일 --- */
         .mcq-question {
@@ -242,7 +263,12 @@
                 </div>
             </div>
         </div>
-        <button style="margin-top:20px; padding:8px 15px; cursor:pointer;" onclick="shuffleCards()">🔀 카드 섞기</button>
+        
+        <!-- 하단 액션 버튼 영역 (병음 토글 및 섞기) -->
+        <div class="action-btns">
+            <button class="action-btn btn-pinyin" id="togglePinyinBtn" onclick="togglePinyin()">병음 끄기 👁️</button>
+            <button class="action-btn btn-shuffle" onclick="shuffleCards()">🔀 카드 섞기</button>
+        </div>
     </div>
 
     <!-- 모드 2: 4지선다 퀴즈 -->
@@ -358,17 +384,39 @@
     ========================================= */
     let cardDeck = [...rawData];
     let cardIndex = 0;
+    let isPinyinVisible = true; // 병음 표시 상태 변수
 
     function renderCard() {
         const word = cardDeck[cardIndex];
         document.getElementById('cardHanzi').innerText = word.hanzi;
-        document.getElementById('cardPinyin').innerText = word.pinyin;
         document.getElementById('cardType').innerText = word.type;
         document.getElementById('cardMeaning').innerText = word.meaning;
         document.getElementById('cardProgress').innerText = `${cardIndex + 1} / ${cardDeck.length}`;
         
+        // 병음 요소 렌더링 및 상태 적용
+        const pinyinEl = document.getElementById('cardPinyin');
+        pinyinEl.innerText = word.pinyin;
+        pinyinEl.style.visibility = isPinyinVisible ? 'visible' : 'hidden';
+        
         // 카드 뒤집힘 초기화
         document.getElementById('flashcard').classList.remove('flipped');
+    }
+
+    // 병음 ON/OFF 토글 기능
+    function togglePinyin() {
+        isPinyinVisible = !isPinyinVisible;
+        const pinyinEl = document.getElementById('cardPinyin');
+        const btn = document.getElementById('togglePinyinBtn');
+
+        if (isPinyinVisible) {
+            pinyinEl.style.visibility = 'visible';
+            btn.innerText = '병음 끄기 👁️';
+            btn.classList.remove('off');
+        } else {
+            pinyinEl.style.visibility = 'hidden';
+            btn.innerText = '병음 켜기 🙈';
+            btn.classList.add('off');
+        }
     }
 
     function toggleCard() {
