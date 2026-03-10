@@ -64,8 +64,8 @@
         .card-container {
             perspective: 1000px;
             width: 100%;
-            max-width: 400px;
-            height: 250px;
+            max-width: 450px;
+            height: 320px; /* 예문 표시를 위해 높이 증가 */
             margin: 20px auto;
         }
         .flip-card {
@@ -104,22 +104,49 @@
             transform: rotateY(180deg);
         }
         .hanzi { font-size: 4em; font-weight: bold; margin-bottom: 10px; color: #2c3e50; }
-        .pinyin { font-size: 1.5em; color: #7f8c8d; transition: opacity 0.3s; }
+        .pinyin { font-size: 1.5em; color: #7f8c8d; transition: opacity 0.3s; margin-bottom: 15px; }
+        
+        /* 스피커 버튼 스타일 */
+        .btn-speak {
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .btn-speak:hover { background-color: #2ecc71; }
+
         .type-badge { 
             background-color: #f1c40f; 
             color: #333; 
-            padding: 5px 10px; 
+            padding: 4px 12px; 
             border-radius: 20px; 
             font-size: 0.9em; 
             font-weight: bold;
             margin-bottom: 15px;
         }
-        .meaning { font-size: 1.3em; line-height: 1.5; word-break: keep-all; }
+        .meaning { font-size: 1.2em; line-height: 1.4; word-break: keep-all; margin-bottom: 15px; }
+        
+        /* 예문 박스 스타일 */
+        .example-box {
+            background-color: rgba(255, 255, 255, 0.15);
+            padding: 15px;
+            border-radius: 10px;
+            width: 90%;
+        }
+        .example-zh { font-size: 1.15em; font-weight: bold; margin-bottom: 5px; color: #fff; }
+        .example-ko { font-size: 0.95em; color: #e8f4f8; }
+
         .card-controls {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            max-width: 400px;
+            max-width: 450px;
             margin: 0 auto 20px auto;
         }
         .nav-btn {
@@ -243,7 +270,7 @@
 
     <!-- 모드 1: 카드 퀴즈 -->
     <div id="mode1" class="quiz-section active">
-        <p>💡 <b>학습 방법:</b> 한자를 보고 뜻을 말해본 뒤, 카드를 클릭하여 정답을 확인하세요.</p>
+        <p>💡 <b>학습 방법:</b> 카드를 클릭하면 뒷면에서 <b>뜻과 예문</b>을 확인할 수 있습니다.</p>
         
         <div class="card-controls">
             <button class="nav-btn" onclick="prevCard()">◀ 이전</button>
@@ -253,18 +280,26 @@
 
         <div class="card-container" id="flashcard" onclick="toggleCard()">
             <div class="flip-card">
+                <!-- 카드 앞면 (한자 + 병음 + 스피커 버튼) -->
                 <div class="card-front">
                     <div class="hanzi" id="cardHanzi"></div>
                     <div class="pinyin" id="cardPinyin"></div>
+                    <button class="btn-speak" onclick="playAudio(event)">🔊 발음 듣기</button>
                 </div>
+                <!-- 카드 뒷면 (품사 + 뜻 + 예문) -->
                 <div class="card-back">
                     <div class="type-badge" id="cardType"></div>
                     <div class="meaning" id="cardMeaning"></div>
+                    <!-- 예문 영역 추가 -->
+                    <div class="example-box">
+                        <div class="example-zh" id="cardExampleZh"></div>
+                        <div class="example-ko" id="cardExampleKo"></div>
+                    </div>
                 </div>
             </div>
         </div>
         
-        <!-- 하단 액션 버튼 영역 (병음 토글 및 섞기) -->
+        <!-- 하단 액션 버튼 영역 -->
         <div class="action-btns">
             <button class="action-btn btn-pinyin" id="togglePinyinBtn" onclick="togglePinyin()">병음 끄기 👁️</button>
             <button class="action-btn btn-shuffle" onclick="shuffleCards()">🔀 카드 섞기</button>
@@ -294,64 +329,64 @@
     </div>
 
 <script>
-    // 전체 단어 데이터 (개사, 접속사, 조사)
+    // 전체 단어 데이터 (개사, 접속사, 조사) - 56개 및 예문 추가
     const rawData = [
-        { hanzi: "啊", pinyin: "[a]", type: "조사", meaning: "문장 끝에 쓰여 긍정을 나타냄." },
-        { hanzi: "吧", pinyin: "[ba]", type: "조사", meaning: "문장 맨 끝에 쓰여, 상의·제의·청유·기대·명령 등의 어기를 나타냄." },
-        { hanzi: "把", pinyin: "[bǎ]", type: "개사", meaning: "…으로. …을〔를〕 가지고." },
-        { hanzi: "不但", pinyin: "[búdàn]", type: "접속사", meaning: "…뿐만 아니라." },
-        { hanzi: "除了", pinyin: "[chúle]", type: "개사", meaning: "…을〔를〕 제외하고(는)." },
-        { hanzi: "从", pinyin: "[cóng]", type: "개사", meaning: "~로 부터." },
-        { hanzi: "但是", pinyin: "[dànshì]", type: "접속사", meaning: "그러나. 그렇지만." },
-        { hanzi: "地", pinyin: "[de]", type: "조사", meaning: "상황어(부사어)로 동사/형용사를 수식할 경우에 쓰임" },
-        { hanzi: "的", pinyin: "[de]", type: "조사", meaning: "관형어 뒤에 쓰여, 관형어와 중심어 사이가 종속 관계임을 나타냄." },
-        { hanzi: "得", pinyin: "[de]", type: "조사", meaning: "동사 뒤에 쓰여 가능을 나타냄." },
-        { hanzi: "对", pinyin: "[duì]", type: "개사", meaning: "…에 대해(서). …에 대하여." },
-        { hanzi: "而且", pinyin: "[érqiě]", type: "접속사", meaning: "게다가. 뿐만 아니라. 또한." },
-        { hanzi: "跟", pinyin: "[gēn]", type: "개사", meaning: "~와" },
-        { hanzi: "根据", pinyin: "[gēnjù]", type: "개사", meaning: "…에 의거하여." },
-        { hanzi: "关于", pinyin: "[guānyú]", type: "개사", meaning: "…에 관해서〔관하여〕." },
-        { hanzi: "过", pinyin: "[guo]", type: "조사", meaning: "동사 뒤에 쓰여 동작의 경험을 나타냄." },
-        { hanzi: "和", pinyin: "[hé]", type: "개사/접속사", meaning: "~와, 그리고" },
-        { hanzi: "了", pinyin: "[le]", type: "조사", meaning: "동사 또는 형용사 뒤에 쓰여 동작 또는 변화가 이미 완료되었음을 나타냄." },
-        { hanzi: "离", pinyin: "[lí]", type: "개사", meaning: "…에서. …로부터. …까지. (거리상)" },
-        { hanzi: "里", pinyin: "[lǐ]", type: "개사", meaning: "~안에. 안쪽." },
-        { hanzi: "吗", pinyin: "[ma]", type: "조사", meaning: "문장 끝에 쓰여 의문의 어기를 나타냄." },
-        { hanzi: "呢", pinyin: "[ne]", type: "조사", meaning: "서술문 뒤에 쓰여 동작이나 상황이 지속됨을 나타냄." },
-        { hanzi: "然后", pinyin: "[ránhòu]", type: "접속사", meaning: "그런 후에. 연후에. 그 다음에." },
-        { hanzi: "如果", pinyin: "[rúguǒ]", type: "접속사", meaning: "만약. 만일." },
-        { hanzi: "虽然", pinyin: "[suīrán]", type: "접속사", meaning: "비록 …하지만〔일지라도〕." },
-        { hanzi: "所以", pinyin: "[suǒyǐ]", type: "접속사", meaning: "그래서. 그러므로. 때문에." },
-        { hanzi: "往", pinyin: "[wǎng]", type: "개사", meaning: "(…로) 향하다." },
-        { hanzi: "为", pinyin: "[wèi]", type: "개사", meaning: "…에게 (…을 해 주다). …을 위하여." },
-        { hanzi: "为了", pinyin: "[wèile]", type: "개사", meaning: "…을〔를〕 하기 위하여." },
-        { hanzi: "向", pinyin: "[xiàng]", type: "개사", meaning: "…(으)로. …에게. …을〔를〕 향하여." },
-        { hanzi: "因为", pinyin: "[yīnwèi]", type: "접속사", meaning: "왜냐하면." },
-        { hanzi: "着", pinyin: "[zhe]", type: "조사", meaning: "…하고 있다. …하고 있는 중이다." },
-        { hanzi: "并且", pinyin: "[bìngqiě]", type: "접속사", meaning: "게다가. 나아가. 그리고." },
-        { hanzi: "比如", pinyin: "[bǐrú]", type: "접속사", meaning: "예를 들어. 예를 들면. 예컨대." },
-        { hanzi: "不管", pinyin: "[bùguǎn]", type: "접속사", meaning: "…을 막론하고. …에 관계없이" },
-        { hanzi: "不过", pinyin: "[búguò]", type: "접속사", meaning: "(반전을 나타내어) 그러나. 그런데. 하지만." },
-        { hanzi: "不仅", pinyin: "[bùjǐn]", type: "접속사", meaning: "…뿐만 아니라." },
-        { hanzi: "等", pinyin: "[děng]", type: "조사", meaning: "등. 따위. (열거 후 한정)" },
-        { hanzi: "对于", pinyin: "[duìyú]", type: "개사", meaning: "…에 대해(서). …에 대하여." },
-        { hanzi: "而", pinyin: "[ér]", type: "접속사", meaning: "…(하)고(도). 그리고. 그러나 [순접/역접]" },
-        { hanzi: "否则", pinyin: "[fǒuzé]", type: "접속사", meaning: "만약 그렇지 않으면." },
-        { hanzi: "尽管", pinyin: "[jǐnguǎn]", type: "접속사", meaning: "비록〔설령〕 …라 하더라도. …에도 불구하고." },
-        { hanzi: "既然", pinyin: "[jìrán]", type: "접속사", meaning: "…된 바에야. …인〔된〕 이상. …만큼." },
-        { hanzi: "即使", pinyin: "[jíshǐ]", type: "접속사", meaning: "설령 …하더라도〔할지라도·일지라도〕" },
-        { hanzi: "可是", pinyin: "[kěshì]", type: "접속사", meaning: "그러나. 하지만. 그렇지만." },
-        { hanzi: "然而", pinyin: "[rán'ér]", type: "접속사", meaning: "그러나. 하지만. 그렇지만." },
-        { hanzi: "无论", pinyin: "[wúlùn]", type: "접속사", meaning: "…을〔를〕 막론하고. …에 관계 없이. …든지." },
-        { hanzi: "相反", pinyin: "[xiāngfǎn]", type: "접속사", meaning: "반대로. 거꾸로. 오히려. 도리어." },
-        { hanzi: "呀", pinyin: "[ya]", type: "조사", meaning: "어조사 ‘啊’가 앞 음절의 영향을 받아 변화된 형태" },
-        { hanzi: "要是", pinyin: "[yàoshi]", type: "접속사", meaning: "만약. 만약 …이라면〔하면〕." },
-        { hanzi: "以", pinyin: "[yǐ]", type: "개사", meaning: "…(으)로(써). …을〔를〕 가지고. …을〔를〕 근거로." },
-        { hanzi: "因此", pinyin: "[yīncǐ]", type: "접속사", meaning: "이로 인하여. 그래서. 이 때문에." },
-        { hanzi: "由于", pinyin: "[yóuyú]", type: "개사", meaning: "…때문에. …(으)로 인하여." },
-        { hanzi: "与", pinyin: "[yǔ]", type: "접속사", meaning: "…와〔과〕." },
-        { hanzi: "于是", pinyin: "[yúshì]", type: "접속사", meaning: "그래서. 이리하여. 그리하여. 이에." },
-        { hanzi: "只要", pinyin: "[zhǐyào]", type: "접속사", meaning: "…하기만 하면." }
+        { hanzi: "啊", pinyin: "[a]", type: "조사", meaning: "문장 끝에 쓰여 긍정을 나타냄.", exampleZh: "漂亮啊！", exampleKo: "아름답구나!" },
+        { hanzi: "吧", pinyin: "[ba]", type: "조사", meaning: "상의·제의·청유·명령 등의 어기를 나타냄.", exampleZh: "我们一起去吧。", exampleKo: "우리 함께 가자." },
+        { hanzi: "把", pinyin: "[bǎ]", type: "개사", meaning: "…을〔를〕 가지고.", exampleZh: "我把苹果吃了。", exampleKo: "나는 사과를 먹었다." },
+        { hanzi: "不但", pinyin: "[búdàn]", type: "접속사", meaning: "…뿐만 아니라.", exampleZh: "他不但买衣服，而且买书。", exampleKo: "그는 옷을 살 뿐만 아니라, 책도 산다." },
+        { hanzi: "除了", pinyin: "[chúle]", type: "개사", meaning: "…을〔를〕 제외하고(는).", exampleZh: "除了苹果，我还喜欢西瓜。", exampleKo: "사과를 제외하고, 나는 수박도 좋아한다." },
+        { hanzi: "从", pinyin: "[cóng]", type: "개사", meaning: "~로 부터.", exampleZh: "我从昨天学习汉语。", exampleKo: "나는 어제부터 중국어를 공부한다." },
+        { hanzi: "但是", pinyin: "[dànshì]", type: "접속사", meaning: "그러나. 그렇지만.", exampleZh: "衣服很漂亮，但是很大。", exampleKo: "옷이 예쁘다, 그러나 아주 크다." },
+        { hanzi: "地", pinyin: "[de]", type: "조사", meaning: "상황어(부사어)로 동사/형용사를 수식 (~하게)", exampleZh: "他高兴地说。", exampleKo: "그가 기쁘게 말한다." },
+        { hanzi: "的", pinyin: "[de]", type: "조사", meaning: "관형어와 중심어의 종속 관계 (~의)", exampleZh: "我的书。", exampleKo: "나의 책." },
+        { hanzi: "得", pinyin: "[de]", type: "조사", meaning: "동사 뒤에 쓰여 정도를 나타냄.", exampleZh: "跑得快。", exampleKo: "빠르게 달린다." },
+        { hanzi: "对", pinyin: "[duì]", type: "개사", meaning: "…에 대해(서). …에 대하여.", exampleZh: "老师对学生很好。", exampleKo: "선생님은 학생에게 매우 잘해 주신다." },
+        { hanzi: "而且", pinyin: "[érqiě]", type: "접속사", meaning: "게다가. 뿐만 아니라. 또한.", exampleZh: "这苹果很大，而且很好吃。", exampleKo: "이 사과는 크고, 게다가 맛있다." },
+        { hanzi: "跟", pinyin: "[gēn]", type: "개사", meaning: "~와", exampleZh: "我跟你一起去北京。", exampleKo: "나는 너와 함께 베이징에 간다." },
+        { hanzi: "根据", pinyin: "[gēnjù]", type: "개사", meaning: "…에 의거하여.", exampleZh: "根据天气，今天下雨。", exampleKo: "날씨에 의거하여, 오늘 비가 온다." },
+        { hanzi: "关于", pinyin: "[guānyú]", type: "개사", meaning: "…에 관해서〔관하여〕.", exampleZh: "关于电脑，我知道很多。", exampleKo: "컴퓨터에 관하여, 나는 많이 안다." },
+        { hanzi: "过", pinyin: "[guo]", type: "조사", meaning: "동사 뒤에 쓰여 동작의 경험을 나타냄.", exampleZh: "我去过北京。", exampleKo: "나는 베이징에 가본 적이 있다." },
+        { hanzi: "和", pinyin: "[hé]", type: "개사/접속사", meaning: "~와, 그리고", exampleZh: "我和爸爸买衣服。", exampleKo: "나와 아빠는 옷을 산다." },
+        { hanzi: "了", pinyin: "[le]", type: "조사", meaning: "동작 또는 변화가 이미 완료되었음을 나타냄.", exampleZh: "我买书了。", exampleKo: "나는 책을 샀다." },
+        { hanzi: "离", pinyin: "[lí]", type: "개사", meaning: "…에서. …로부터. (거리상)", exampleZh: "我家离学校很近。", exampleKo: "우리 집은 학교에서 가깝다." },
+        { hanzi: "里", pinyin: "[lǐ]", type: "개사", meaning: "~안에. 안쪽.", exampleZh: "房间里有小猫。", exampleKo: "방 안에 고양이가 있다." },
+        { hanzi: "吗", pinyin: "[ma]", type: "조사", meaning: "문장 끝에 쓰여 의문의 어기를 나타냄.", exampleZh: "你吃饭了吗？", exampleKo: "너 밥 먹었니?" },
+        { hanzi: "呢", pinyin: "[ne]", type: "조사", meaning: "동작이나 상황이 지속됨/상태를 묻는 어기.", exampleZh: "你在哪儿呢？", exampleKo: "너 어디에 있니?" },
+        { hanzi: "然后", pinyin: "[ránhòu]", type: "접속사", meaning: "그런 후에. 연후에. 그 다음에.", exampleZh: "吃饭然后睡觉。", exampleKo: "밥을 먹고, 그런 후에 잔다." },
+        { hanzi: "如果", pinyin: "[rúguǒ]", type: "접속사", meaning: "만약. 만일.", exampleZh: "如果下雨，我们不去。", exampleKo: "만약 비가 오면, 우리는 안 간다." },
+        { hanzi: "虽然", pinyin: "[suīrán]", type: "접속사", meaning: "비록 …하지만〔일지라도〕.", exampleZh: "虽然衣服大，但是很漂亮。", exampleKo: "비록 옷이 크지만, 매우 예쁘다." },
+        { hanzi: "所以", pinyin: "[suǒyǐ]", type: "접속사", meaning: "그래서. 그러므로. 때문에.", exampleZh: "因为下雨，所以我没去。", exampleKo: "비가 와서, 그래서 나는 안 갔다." },
+        { hanzi: "往", pinyin: "[wǎng]", type: "개사", meaning: "(…로) 향하다.", exampleZh: "往前面走。", exampleKo: "앞을 향해 걸으세요." },
+        { hanzi: "为", pinyin: "[wèi]", type: "개사", meaning: "…에게 (…을 해 주다). …을 위하여.", exampleZh: "妈妈为我买书。", exampleKo: "엄마는 나를 위해 책을 사주신다." },
+        { hanzi: "为了", pinyin: "[wèile]", type: "개사", meaning: "…을〔를〕 하기 위하여.", exampleZh: "为了学习，我去北京。", exampleKo: "공부를 하기 위해, 나는 베이징에 간다." },
+        { hanzi: "向", pinyin: "[xiàng]", type: "개사", meaning: "…(으)로. …에게. …을〔를〕 향하여.", exampleZh: "他向我走来。", exampleKo: "그가 나를 향해 걸어온다." },
+        { hanzi: "因为", pinyin: "[yīnwèi]", type: "접속사", meaning: "왜냐하면.", exampleZh: "因为下雨，所以我没去。", exampleKo: "비가 와서, 그래서 나는 안 갔다." },
+        { hanzi: "着", pinyin: "[zhe]", type: "조사", meaning: "…하고 있다. …하고 있는 중이다.", exampleZh: "门开着。", exampleKo: "문이 열려 있다." },
+        { hanzi: "并且", pinyin: "[bìngqiě]", type: "접속사", meaning: "게다가. 나아가. 그리고.", exampleZh: "他买衣服，并且买书。", exampleKo: "그는 옷을 사고, 게다가 책도 산다." },
+        { hanzi: "比如", pinyin: "[bǐrú]", type: "접속사", meaning: "예를 들어. 예를 들면. 예컨대.", exampleZh: "我喜欢水果，比如苹果。", exampleKo: "나는 과일을 좋아한다, 예를 들어 사과." },
+        { hanzi: "不管", pinyin: "[bùguǎn]", type: "접속사", meaning: "…을 막론하고. …에 관계없이", exampleZh: "不管下雨，我都去。", exampleKo: "비가 오든 말든, 나는 다 간다." },
+        { hanzi: "不过", pinyin: "[búguò]", type: "접속사", meaning: "(반전을 나타내어) 그러나. 하지만.", exampleZh: "这很好，不过太贵。", exampleKo: "이것은 좋다, 하지만 너무 비싸다." },
+        { hanzi: "不仅", pinyin: "[bùjǐn]", type: "접속사", meaning: "…뿐만 아니라.", exampleZh: "他不仅会汉语，还会写字。", exampleKo: "그는 중국어뿐만 아니라, 글씨도 쓴다." },
+        { hanzi: "等", pinyin: "[děng]", type: "조사", meaning: "등. 따위. (열거 후 한정)", exampleZh: "苹果、西瓜等。", exampleKo: "사과, 수박 등." },
+        { hanzi: "对于", pinyin: "[duìyú]", type: "개사", meaning: "…에 대해(서). …에 대하여.", exampleZh: "对于这个事情，我很高兴。", exampleKo: "이 일에 대하여, 나는 매우 기쁘다." },
+        { hanzi: "而", pinyin: "[ér]", type: "접속사", meaning: "그리고. 그러나 [순접/역접]", exampleZh: "我喜欢他，而他不喜欢我。", exampleKo: "나는 그를 좋아한다, 그러나 그는 나를 좋아하지 않는다." },
+        { hanzi: "否则", pinyin: "[fǒuzé]", type: "접속사", meaning: "만약 그렇지 않으면.", exampleZh: "快走，否则会迟到。", exampleKo: "빨리 가라, 그렇지 않으면 지각한다." },
+        { hanzi: "尽管", pinyin: "[jǐnguǎn]", type: "접속사", meaning: "비록〔설령〕 …라 하더라도.", exampleZh: "尽管下雨，他还是去了。", exampleKo: "비록 비가 왔지만, 그는 여전히 갔다." },
+        { hanzi: "既然", pinyin: "[jìrán]", type: "접속사", meaning: "…된 바에야. …인〔된〕 이상.", exampleZh: "既然你来了，我们吃饭吧。", exampleKo: "기왕 네가 왔으니, 우리 밥 먹자." },
+        { hanzi: "即使", pinyin: "[jíshǐ]", type: "접속사", meaning: "설령 …하더라도〔할지라도〕", exampleZh: "即使下雨，我也去。", exampleKo: "설령 비가 오더라도, 나는 간다." },
+        { hanzi: "可是", pinyin: "[kěshì]", type: "접속사", meaning: "그러나. 하지만. 그렇지만.", exampleZh: "我想买，可是没有钱。", exampleKo: "나는 사고 싶다, 그러나 돈이 없다." },
+        { hanzi: "然而", pinyin: "[rán'ér]", type: "접속사", meaning: "그러나. 하지만. 그렇지만.", exampleZh: "他想去北京，然而没钱。", exampleKo: "그는 베이징에 가고 싶다, 그렇지만 돈이 없다." },
+        { hanzi: "无论", pinyin: "[wúlùn]", type: "접속사", meaning: "…을〔를〕 막론하고. …든지.", exampleZh: "无论天气怎么样，我都去。", exampleKo: "날씨가 어떻든, 나는 다 간다." },
+        { hanzi: "相反", pinyin: "[xiāngfǎn]", type: "접속사", meaning: "반대로. 거꾸로. 오히려.", exampleZh: "弟弟喜欢热，相反哥哥喜欢冷。", exampleKo: "동생은 더운 것을 좋아하고, 반대로 형은 추운 것을 좋아한다." },
+        { hanzi: "呀", pinyin: "[ya]", type: "조사", list: "어조사 ‘啊’가 앞 음절의 영향을 받아 변화된 형태", meaning: "문장 끝에 쓰여 부드러운 어기 표현.", exampleZh: "是呀。", exampleKo: "맞아요/그래요." },
+        { hanzi: "要是", pinyin: "[yàoshi]", type: "접속사", meaning: "만약. 만약 …이라면〔하면〕.", exampleZh: "要是明天下雨，我不去。", exampleKo: "만약 내일 비가 오면, 나는 안 간다." },
+        { hanzi: "以", pinyin: "[yǐ]", type: "개사", meaning: "…(으)로(써). …을〔를〕 가지고.", exampleZh: "我们以汉语说话。", exampleKo: "우리는 중국어로 말한다." },
+        { hanzi: "因此", pinyin: "[yīncǐ]", type: "접속사", meaning: "이로 인하여. 그래서. 이 때문에.", exampleZh: "昨天下雨，因此我没去。", exampleKo: "어제 비가 왔다, 그래서 나는 안 갔다." },
+        { hanzi: "由于", pinyin: "[yóuyú]", type: "개사", meaning: "…때문에. …(으)로 인하여.", exampleZh: "由于下雨，我不去。", exampleKo: "비가 오기 때문에, 나는 가지 않는다." },
+        { hanzi: "与", pinyin: "[yǔ]", type: "접속사", meaning: "…와〔과〕.", exampleZh: "老师与学生。", exampleKo: "선생님과 학생." },
+        { hanzi: "于是", pinyin: "[yúshì]", type: "접속사", meaning: "그래서. 그리하여. 이에.", exampleZh: "下雨了，于是我们在家。", exampleKo: "비가 왔다, 그래서 우리는 집에 있다." },
+        { hanzi: "只要", pinyin: "[zhǐyào]", type: "접속사", meaning: "…하기만 하면.", exampleZh: "只要你来，我就高兴。", exampleKo: "네가 오기만 하면, 나는 기쁘다." }
     ];
 
     // 배열 섞기 함수
@@ -380,29 +415,71 @@
     }
 
     /* =========================================
+       TTS (음성 합성) 최적화 로직
+    ========================================= */
+    let chineseVoice = null;
+
+    function loadVoices() {
+        const voices = window.speechSynthesis.getVoices();
+        chineseVoice = voices.find(voice => 
+            voice.lang.includes('zh') && 
+            (voice.name.includes('Google') || voice.name.includes('Microsoft') || voice.name.includes('Yaoxiao') || voice.name.includes('Huihui') || voice.name.includes('Ting-Ting'))
+        );
+        if (!chineseVoice) {
+            chineseVoice = voices.find(voice => voice.lang.includes('zh'));
+        }
+    }
+
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+        loadVoices(); 
+    }
+
+    function playAudio(event) {
+        event.stopPropagation();
+        
+        const textToRead = cardDeck[cardIndex].hanzi;
+
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(textToRead);
+            utterance.lang = 'zh-CN';
+            if (chineseVoice) utterance.voice = chineseVoice;
+            utterance.rate = 0.85;
+            window.speechSynthesis.speak(utterance);
+        } else {
+            alert("현재 사용 중인 브라우저는 음성 읽기 기능(TTS)을 지원하지 않습니다.");
+        }
+    }
+
+
+    /* =========================================
        모드 1: 플래시 카드 로직
     ========================================= */
     let cardDeck = [...rawData];
     let cardIndex = 0;
-    let isPinyinVisible = true; // 병음 표시 상태 변수
+    let isPinyinVisible = true; 
 
     function renderCard() {
         const word = cardDeck[cardIndex];
+        
+        // 앞면
         document.getElementById('cardHanzi').innerText = word.hanzi;
-        document.getElementById('cardType').innerText = word.type;
-        document.getElementById('cardMeaning').innerText = word.meaning;
         document.getElementById('cardProgress').innerText = `${cardIndex + 1} / ${cardDeck.length}`;
         
-        // 병음 요소 렌더링 및 상태 적용
         const pinyinEl = document.getElementById('cardPinyin');
         pinyinEl.innerText = word.pinyin;
         pinyinEl.style.visibility = isPinyinVisible ? 'visible' : 'hidden';
         
-        // 카드 뒤집힘 초기화
+        // 뒷면 (품사, 뜻, 예문 추가)
+        document.getElementById('cardType').innerText = word.type;
+        document.getElementById('cardMeaning').innerText = word.meaning;
+        document.getElementById('cardExampleZh').innerText = word.exampleZh;
+        document.getElementById('cardExampleKo').innerText = word.exampleKo;
+        
         document.getElementById('flashcard').classList.remove('flipped');
     }
 
-    // 병음 ON/OFF 토글 기능
     function togglePinyin() {
         isPinyinVisible = !isPinyinVisible;
         const pinyinEl = document.getElementById('cardPinyin');
@@ -424,6 +501,8 @@
     }
 
     function nextCard() {
+        if(window.speechSynthesis) window.speechSynthesis.cancel();
+
         if (cardIndex < cardDeck.length - 1) {
             cardIndex++;
             renderCard();
@@ -434,6 +513,8 @@
     }
 
     function prevCard() {
+        if(window.speechSynthesis) window.speechSynthesis.cancel();
+        
         if (cardIndex > 0) {
             cardIndex--;
             renderCard();
@@ -441,12 +522,12 @@
     }
 
     function shuffleCards() {
+        if(window.speechSynthesis) window.speechSynthesis.cancel();
         cardDeck = shuffleArray(rawData);
         cardIndex = 0;
         renderCard();
     }
 
-    // 초기 카드 렌더링
     renderCard();
 
 
@@ -485,7 +566,6 @@
         document.getElementById('mcqType').style.display = 'inline-block';
         document.getElementById('mcqMeaningText').innerText = currentQ.meaning;
 
-        // 오답 보기 3개 추출 (현재 정답 제외)
         let distractors = rawData.filter(w => w.hanzi !== currentQ.hanzi);
         distractors = shuffleArray(distractors).slice(0, 3);
         
@@ -507,7 +587,7 @@
     }
 
     function checkAnswer(clickedBtn, selectedHanzi, correctHanzi) {
-        if (answered) return; // 중복 클릭 방지
+        if (answered) return;
         answered = true;
 
         const allBtns = document.querySelectorAll('.mcq-btn');
@@ -523,7 +603,6 @@
             feedback.innerHTML = `❌ 오답입니다. 정답은 <b>[ ${correctHanzi} ]</b> 입니다.`;
             feedback.style.color = "#e74c3c";
             
-            // 정답 표시
             allBtns.forEach(b => {
                 if(b.innerText === correctHanzi) b.classList.add('correct');
             });
