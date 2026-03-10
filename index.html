@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HSK 4급 개사·접속사·조사 완벽 마스터 퀴즈</title>
+    <style>
+        body {
+            font-family: 'Malgun Gothic', '맑은 고딕', sans-serif;
+            background-color: #f0f4f8;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #7f8c8d;
+            margin-bottom: 30px;
+        }
+        
+        /* 탭 버튼 스타일 */
+        .tab-container {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .tab-btn {
+            padding: 12px 25px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            background-color: #e0e6ed;
+            color: #555;
+            transition: all 0.3s ease;
+        }
+        .tab-btn.active {
+            background-color: #3498db;
+            color: white;
+            box-shadow: 0 4px 6px rgba(52, 152, 219, 0.3);
+        }
+        
+        /* 공통 컨테이너 */
+        .quiz-section {
+            display: none;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            min-height: 400px;
+        }
+        .quiz-section.active {
+            display: block;
+        }
+
+        /* --- 모드 1: 카드 퀴즈 스타일 --- */
+        .card-container {
+            perspective: 1000px;
+            width: 100%;
+            max-width: 400px;
+            height: 250px;
+            margin: 20px auto;
+        }
+        .flip-card {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            cursor: pointer;
+        }
+        .card-container.flipped .flip-card {
+            transform: rotateY(180deg);
+        }
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .card-front {
+            background-color: #fff;
+            border: 2px solid #3498db;
+        }
+        .card-back {
+            background-color: #3498db;
+            color: white;
+            transform: rotateY(180deg);
+        }
+        .hanzi { font-size: 4em; font-weight: bold; margin-bottom: 10px; color: #2c3e50; }
+        .pinyin { font-size: 1.5em; color: #7f8c8d; }
+        .type-badge { 
+            background-color: #f1c40f; 
+            color: #333; 
+            padding: 5px 10px; 
+            border-radius: 20px; 
+            font-size: 0.9em; 
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        .meaning { font-size: 1.3em; line-height: 1.5; word-break: keep-all; }
+        .card-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 400px;
+            margin: 0 auto 20px auto;
+        }
+        .nav-btn {
+            padding: 10px 20px;
+            font-size: 1em;
+            background-color: #2c3e50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .nav-btn:hover { background-color: #1a252f; }
+        .card-progress { font-weight: bold; color: #7f8c8d; }
+
+        /* --- 모드 2: 4지선다 퀴즈 스타일 --- */
+        .mcq-question {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-bottom: 25px;
+            color: #2c3e50;
+            line-height: 1.5;
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .mcq-type {
+            display: inline-block;
+            background-color: #e74c3c;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.7em;
+            margin-bottom: 15px;
+            vertical-align: middle;
+        }
+        .mcq-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .mcq-btn {
+            background-color: #fff;
+            border: 2px solid #bdc3c7;
+            padding: 20px;
+            border-radius: 10px;
+            font-size: 2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #34495e;
+        }
+        .mcq-btn:hover {
+            border-color: #3498db;
+            background-color: #ebf5fb;
+        }
+        .mcq-btn.correct { background-color: #2ecc71; color: white; border-color: #27ae60; }
+        .mcq-btn.wrong { background-color: #e74c3c; color: white; border-color: #c0392b; }
+        
+        #mcqFeedback {
+            font-size: 1.2em;
+            font-weight: bold;
+            min-height: 30px;
+            margin-bottom: 15px;
+        }
+        .btn-next-mcq {
+            display: none;
+            margin: 0 auto;
+            padding: 12px 30px;
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .btn-next-mcq:hover { background-color: #2ecc71; }
+        
+        .mcq-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            font-weight: bold;
+            color: #7f8c8d;
+        }
+
+    </style>
+</head>
+<body>
+
+    <h1>🇨🇳 HSK 4급 문법 단어 퀴즈</h1>
+    <p class="subtitle">개사, 접속사, 조사 완벽 암기를 위한 2가지 모드</p>
+
+    <!-- 탭 메뉴 -->
+    <div class="tab-container">
+        <button class="tab-btn active" id="tab1" onclick="switchMode(1)">🃏 카드 뜻 맞추기</button>
+        <button class="tab-btn" id="tab2" onclick="switchMode(2)">📝 4지선다 한자 맞추기</button>
+    </div>
+
+    <!-- 모드 1: 카드 퀴즈 -->
+    <div id="mode1" class="quiz-section active">
+        <p>💡 <b>학습 방법:</b> 한자를 보고 뜻을 말해본 뒤, 카드를 클릭하여 정답을 확인하세요.</p>
+        
+        <div class="card-controls">
+            <button class="nav-btn" onclick="prevCard()">◀ 이전</button>
+            <div class="card-progress" id="cardProgress">1 / 56</div>
+            <button class="nav-btn" onclick="nextCard()">다음 ▶</button>
+        </div>
+
+        <div class="card-container" id="flashcard" onclick="toggleCard()">
+            <div class="flip-card">
+                <div class="card-front">
+                    <div class="hanzi" id="cardHanzi"></div>
+                    <div class="pinyin" id="cardPinyin"></div>
+                </div>
+                <div class="card-back">
+                    <div class="type-badge" id="cardType"></div>
+                    <div class="meaning" id="cardMeaning"></div>
+                </div>
+            </div>
+        </div>
+        <button style="margin-top:20px; padding:8px 15px; cursor:pointer;" onclick="shuffleCards()">🔀 카드 섞기</button>
+    </div>
+
+    <!-- 모드 2: 4지선다 퀴즈 -->
+    <div id="mode2" class="quiz-section">
+        <p>💡 <b>학습 방법:</b> 주어진 뜻과 품사를 보고 알맞은 한자를 선택하세요.</p>
+        
+        <div class="mcq-stats">
+            <span id="mcqProgress">문제: 1 / 56</span>
+            <span id="mcqScore" style="color:#d35400;">점수: 0 점</span>
+        </div>
+
+        <div class="mcq-question">
+            <span class="mcq-type" id="mcqType"></span><br>
+            <span id="mcqMeaningText"></span>
+        </div>
+
+        <div class="mcq-options" id="mcqOptions">
+            <!-- 버튼들이 JS로 생성됨 -->
+        </div>
+
+        <div id="mcqFeedback"></div>
+        <button class="btn-next-mcq" id="mcqNextBtn" onclick="loadNextMcq()">다음 문제 ▶</button>
+    </div>
+
+<script>
+    // 전체 단어 데이터 (개사, 접속사, 조사)
+    const rawData = [
+        { hanzi: "啊", pinyin: "[a]", type: "조사", meaning: "문장 끝에 쓰여 긍정을 나타냄." },
+        { hanzi: "吧", pinyin: "[ba]", type: "조사", meaning: "문장 맨 끝에 쓰여, 상의·제의·청유·기대·명령 등의 어기를 나타냄." },
+        { hanzi: "把", pinyin: "[bǎ]", type: "개사", meaning: "…으로. …을〔를〕 가지고." },
+        { hanzi: "不但", pinyin: "[búdàn]", type: "접속사", meaning: "…뿐만 아니라." },
+        { hanzi: "除了", pinyin: "[chúle]", type: "개사", meaning: "…을〔를〕 제외하고(는)." },
+        { hanzi: "从", pinyin: "[cóng]", type: "개사", meaning: "~로 부터." },
+        { hanzi: "但是", pinyin: "[dànshì]", type: "접속사", meaning: "그러나. 그렇지만." },
+        { hanzi: "地", pinyin: "[de]", type: "조사", meaning: "상황어(부사어)로 동사/형용사를 수식할 경우에 쓰임" },
+        { hanzi: "的", pinyin: "[de]", type: "조사", meaning: "관형어 뒤에 쓰여, 관형어와 중심어 사이가 종속 관계임을 나타냄." },
+        { hanzi: "得", pinyin: "[de]", type: "조사", meaning: "동사 뒤에 쓰여 가능을 나타냄." },
+        { hanzi: "对", pinyin: "[duì]", type: "개사", meaning: "…에 대해(서). …에 대하여." },
+        { hanzi: "而且", pinyin: "[érqiě]", type: "접속사", meaning: "게다가. 뿐만 아니라. 또한." },
+        { hanzi: "跟", pinyin: "[gēn]", type: "개사", meaning: "~와" },
+        { hanzi: "根据", pinyin: "[gēnjù]", type: "개사", meaning: "…에 의거하여." },
+        { hanzi: "关于", pinyin: "[guānyú]", type: "개사", meaning: "…에 관해서〔관하여〕." },
+        { hanzi: "过", pinyin: "[guo]", type: "조사", meaning: "동사 뒤에 쓰여 동작의 경험을 나타냄." },
+        { hanzi: "和", pinyin: "[hé]", type: "개사/접속사", meaning: "~와, 그리고" },
+        { hanzi: "了", pinyin: "[le]", type: "조사", meaning: "동사 또는 형용사 뒤에 쓰여 동작 또는 변화가 이미 완료되었음을 나타냄." },
+        { hanzi: "离", pinyin: "[lí]", type: "개사", meaning: "…에서. …로부터. …까지. (거리상)" },
+        { hanzi: "里", pinyin: "[lǐ]", type: "개사", meaning: "~안에. 안쪽." },
+        { hanzi: "吗", pinyin: "[ma]", type: "조사", meaning: "문장 끝에 쓰여 의문의 어기를 나타냄." },
+        { hanzi: "呢", pinyin: "[ne]", type: "조사", meaning: "서술문 뒤에 쓰여 동작이나 상황이 지속됨을 나타냄." },
+        { hanzi: "然后", pinyin: "[ránhòu]", type: "접속사", meaning: "그런 후에. 연후에. 그 다음에." },
+        { hanzi: "如果", pinyin: "[rúguǒ]", type: "접속사", meaning: "만약. 만일." },
+        { hanzi: "虽然", pinyin: "[suīrán]", type: "접속사", meaning: "비록 …하지만〔일지라도〕." },
+        { hanzi: "所以", pinyin: "[suǒyǐ]", type: "접속사", meaning: "그래서. 그러므로. 때문에." },
+        { hanzi: "往", pinyin: "[wǎng]", type: "개사", meaning: "(…로) 향하다." },
+        { hanzi: "为", pinyin: "[wèi]", type: "개사", meaning: "…에게 (…을 해 주다). …을 위하여." },
+        { hanzi: "为了", pinyin: "[wèile]", type: "개사", meaning: "…을〔를〕 하기 위하여." },
+        { hanzi: "向", pinyin: "[xiàng]", type: "개사", meaning: "…(으)로. …에게. …을〔를〕 향하여." },
+        { hanzi: "因为", pinyin: "[yīnwèi]", type: "접속사", meaning: "왜냐하면." },
+        { hanzi: "着", pinyin: "[zhe]", type: "조사", meaning: "…하고 있다. …하고 있는 중이다." },
+        { hanzi: "并且", pinyin: "[bìngqiě]", type: "접속사", meaning: "게다가. 나아가. 그리고." },
+        { hanzi: "比如", pinyin: "[bǐrú]", type: "접속사", meaning: "예를 들어. 예를 들면. 예컨대." },
+        { hanzi: "不管", pinyin: "[bùguǎn]", type: "접속사", meaning: "…을 막론하고. …에 관계없이" },
+        { hanzi: "不过", pinyin: "[búguò]", type: "접속사", meaning: "(반전을 나타내어) 그러나. 그런데. 하지만." },
+        { hanzi: "不仅", pinyin: "[bùjǐn]", type: "접속사", meaning: "…뿐만 아니라." },
+        { hanzi: "等", pinyin: "[děng]", type: "조사", meaning: "등. 따위. (열거 후 한정)" },
+        { hanzi: "对于", pinyin: "[duìyú]", type: "개사", meaning: "…에 대해(서). …에 대하여." },
+        { hanzi: "而", pinyin: "[ér]", type: "접속사", meaning: "…(하)고(도). 그리고. 그러나 [순접/역접]" },
+        { hanzi: "否则", pinyin: "[fǒuzé]", type: "접속사", meaning: "만약 그렇지 않으면." },
+        { hanzi: "尽管", pinyin: "[jǐnguǎn]", type: "접속사", meaning: "비록〔설령〕 …라 하더라도. …에도 불구하고." },
+        { hanzi: "既然", pinyin: "[jìrán]", type: "접속사", meaning: "…된 바에야. …인〔된〕 이상. …만큼." },
+        { hanzi: "即使", pinyin: "[jíshǐ]", type: "접속사", meaning: "설령 …하더라도〔할지라도·일지라도〕" },
+        { hanzi: "可是", pinyin: "[kěshì]", type: "접속사", meaning: "그러나. 하지만. 그렇지만." },
+        { hanzi: "然而", pinyin: "[rán'ér]", type: "접속사", meaning: "그러나. 하지만. 그렇지만." },
+        { hanzi: "无论", pinyin: "[wúlùn]", type: "접속사", meaning: "…을〔를〕 막론하고. …에 관계 없이. …든지." },
+        { hanzi: "相反", pinyin: "[xiāngfǎn]", type: "접속사", meaning: "반대로. 거꾸로. 오히려. 도리어." },
+        { hanzi: "呀", pinyin: "[ya]", type: "조사", meaning: "어조사 ‘啊’가 앞 음절의 영향을 받아 변화된 형태" },
+        { hanzi: "要是", pinyin: "[yàoshi]", type: "접속사", meaning: "만약. 만약 …이라면〔하면〕." },
+        { hanzi: "以", pinyin: "[yǐ]", type: "개사", meaning: "…(으)로(써). …을〔를〕 가지고. …을〔를〕 근거로." },
+        { hanzi: "因此", pinyin: "[yīncǐ]", type: "접속사", meaning: "이로 인하여. 그래서. 이 때문에." },
+        { hanzi: "由于", pinyin: "[yóuyú]", type: "개사", meaning: "…때문에. …(으)로 인하여." },
+        { hanzi: "与", pinyin: "[yǔ]", type: "접속사", meaning: "…와〔과〕." },
+        { hanzi: "于是", pinyin: "[yúshì]", type: "접속사", meaning: "그래서. 이리하여. 그리하여. 이에." },
+        { hanzi: "只要", pinyin: "[zhǐyào]", type: "접속사", meaning: "…하기만 하면." }
+    ];
+
+    // 배열 섞기 함수
+    function shuffleArray(array) {
+        let arr = [...array];
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+    }
+
+    // 탭 전환 로직
+    function switchMode(mode) {
+        document.getElementById('tab1').classList.remove('active');
+        document.getElementById('tab2').classList.remove('active');
+        document.getElementById('mode1').classList.remove('active');
+        document.getElementById('mode2').classList.remove('active');
+
+        document.getElementById('tab' + mode).classList.add('active');
+        document.getElementById('mode' + mode).classList.add('active');
+        
+        if(mode === 2 && mcqDeck.length === 0) {
+            initMcq();
+        }
+    }
+
+    /* =========================================
+       모드 1: 플래시 카드 로직
+    ========================================= */
+    let cardDeck = [...rawData];
+    let cardIndex = 0;
+
+    function renderCard() {
+        const word = cardDeck[cardIndex];
+        document.getElementById('cardHanzi').innerText = word.hanzi;
+        document.getElementById('cardPinyin').innerText = word.pinyin;
+        document.getElementById('cardType').innerText = word.type;
+        document.getElementById('cardMeaning').innerText = word.meaning;
+        document.getElementById('cardProgress').innerText = `${cardIndex + 1} / ${cardDeck.length}`;
+        
+        // 카드 뒤집힘 초기화
+        document.getElementById('flashcard').classList.remove('flipped');
+    }
+
+    function toggleCard() {
+        document.getElementById('flashcard').classList.toggle('flipped');
+    }
+
+    function nextCard() {
+        if (cardIndex < cardDeck.length - 1) {
+            cardIndex++;
+            renderCard();
+        } else {
+            alert('마지막 카드입니다. 카드를 섞어 처음부터 다시 시작합니다.');
+            shuffleCards();
+        }
+    }
+
+    function prevCard() {
+        if (cardIndex > 0) {
+            cardIndex--;
+            renderCard();
+        }
+    }
+
+    function shuffleCards() {
+        cardDeck = shuffleArray(rawData);
+        cardIndex = 0;
+        renderCard();
+    }
+
+    // 초기 카드 렌더링
+    renderCard();
+
+
+    /* =========================================
+       모드 2: 4지선다 객관식 로직
+    ========================================= */
+    let mcqDeck = [];
+    let mcqIndex = 0;
+    let score = 0;
+    let answered = false;
+
+    function initMcq() {
+        mcqDeck = shuffleArray(rawData);
+        mcqIndex = 0;
+        score = 0;
+        updateMcqUI();
+        loadMcqQuestion();
+    }
+
+    function loadMcqQuestion() {
+        if (mcqIndex >= mcqDeck.length) {
+            document.getElementById('mcqMeaningText').innerHTML = "🎉 모든 퀴즈 완료!";
+            document.getElementById('mcqType').style.display = 'none';
+            document.getElementById('mcqOptions').innerHTML = "";
+            document.getElementById('mcqFeedback').innerHTML = `총 <b>${mcqDeck.length}</b>문제 중 <b>${score}</b>문제를 맞히셨습니다.`;
+            document.getElementById('mcqNextBtn').style.display = 'none';
+            return;
+        }
+
+        answered = false;
+        document.getElementById('mcqNextBtn').style.display = 'none';
+        document.getElementById('mcqFeedback').innerHTML = "";
+        
+        const currentQ = mcqDeck[mcqIndex];
+        document.getElementById('mcqType').innerText = currentQ.type;
+        document.getElementById('mcqType').style.display = 'inline-block';
+        document.getElementById('mcqMeaningText').innerText = currentQ.meaning;
+
+        // 오답 보기 3개 추출 (현재 정답 제외)
+        let distractors = rawData.filter(w => w.hanzi !== currentQ.hanzi);
+        distractors = shuffleArray(distractors).slice(0, 3);
+        
+        let options = [currentQ, ...distractors];
+        options = shuffleArray(options);
+
+        const optionsContainer = document.getElementById('mcqOptions');
+        optionsContainer.innerHTML = "";
+
+        options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = 'mcq-btn';
+            btn.innerText = opt.hanzi;
+            btn.onclick = () => checkAnswer(btn, opt.hanzi, currentQ.hanzi);
+            optionsContainer.appendChild(btn);
+        });
+
+        updateMcqUI();
+    }
+
+    function checkAnswer(clickedBtn, selectedHanzi, correctHanzi) {
+        if (answered) return; // 중복 클릭 방지
+        answered = true;
+
+        const allBtns = document.querySelectorAll('.mcq-btn');
+        const feedback = document.getElementById('mcqFeedback');
+
+        if (selectedHanzi === correctHanzi) {
+            clickedBtn.classList.add('correct');
+            feedback.innerHTML = "✅ 정답입니다!";
+            feedback.style.color = "#27ae60";
+            score++;
+        } else {
+            clickedBtn.classList.add('wrong');
+            feedback.innerHTML = `❌ 오답입니다. 정답은 <b>[ ${correctHanzi} ]</b> 입니다.`;
+            feedback.style.color = "#e74c3c";
+            
+            // 정답 표시
+            allBtns.forEach(b => {
+                if(b.innerText === correctHanzi) b.classList.add('correct');
+            });
+        }
+
+        updateMcqUI();
+        document.getElementById('mcqNextBtn').style.display = 'block';
+    }
+
+    function loadNextMcq() {
+        mcqIndex++;
+        loadMcqQuestion();
+    }
+
+    function updateMcqUI() {
+        if(mcqIndex < mcqDeck.length) {
+            document.getElementById('mcqProgress').innerText = `문제: ${mcqIndex + 1} / ${mcqDeck.length}`;
+        }
+        document.getElementById('mcqScore').innerText = `점수: ${score} 점`;
+    }
+
+</script>
+</body>
+</html>
