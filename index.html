@@ -255,6 +255,44 @@
             color: #7f8c8d;
         }
 
+        
+        /* 하단 링크 버튼 영역 스타일 */
+        .link-section {
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            margin-top: 30px;
+            text-align: center;
+        }
+        .link-section h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.2em;
+        }
+        .link-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+        }
+        .link-btn {
+            display: inline-block;
+            padding: 12px 20px;
+            background-color: #34495e;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: all 0.3s;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+        }
+        .link-btn:hover {
+            background-color: #f39c12;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.15);
+        }
+
     </style>
 </head>
 <body>
@@ -326,6 +364,24 @@
 
         <div id="mcqFeedback"></div>
         <button class="btn-next-mcq" id="mcqNextBtn" onclick="loadNextMcq()">다음 문제 ▶</button>
+    </div>
+
+    
+    <!-- 하단 가상 링크 버튼 영역 (10개) -->
+    <div class="link-section">
+        <h3>🔗 관련 정보 및 추가 학습 이동</h3>
+        <div class="link-grid">
+            <a href="Level1_words.html" target="_blank" class="link-btn">난이도 1 학습</a>
+            <a href="https://example.com/page2" target="_blank" class="link-btn">텍스트 2</a>
+            <a href="https://example.com/page3" target="_blank" class="link-btn">텍스트 3</a>
+            <a href="https://example.com/page4" target="_blank" class="link-btn">텍스트 4</a>
+            <a href="https://example.com/page5" target="_blank" class="link-btn">텍스트 5</a>
+            <a href="https://example.com/page6" target="_blank" class="link-btn">텍스트 6</a>
+            <a href="https://example.com/page7" target="_blank" class="link-btn">텍스트 7</a>
+            <a href="https://example.com/page8" target="_blank" class="link-btn">텍스트 8</a>
+            <a href="https://example.com/page9" target="_blank" class="link-btn">텍스트 9</a>
+            <a href="https://example.com/page10" target="_blank" class="link-btn">텍스트 10</a>
+        </div>
     </div>
 
 <script>
