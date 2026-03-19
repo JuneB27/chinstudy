@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HSK 4급 [난이도 2] 전체 단어 마스터 퀴즈</title>
+    <style>
+        body {
+            font-family: 'Malgun Gothic', '맑은 고딕', sans-serif;
+            background-color: #f0f4f8;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+        h1 { color: #2c3e50; margin-bottom: 10px; }
+        .subtitle { color: #7f8c8d; margin-bottom: 30px; }
+        
+        .tab-container { display: flex; justify-content: center; gap: 15px; margin-bottom: 30px; }
+        .tab-btn {
+            padding: 12px 25px; font-size: 1.1em; font-weight: bold; border: none;
+            border-radius: 8px; cursor: pointer; background-color: #e0e6ed;
+            color: #555; transition: all 0.3s ease;
+        }
+        .tab-btn.active { background-color: #3498db; color: white; box-shadow: 0 4px 6px rgba(52, 152, 219, 0.3); }
+        
+        .quiz-section {
+            display: none; background: #ffffff; padding: 30px; border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05); min-height: 400px;
+        }
+        .quiz-section.active { display: block; }
+
+        /* 카드 스타일 */
+        .card-container { perspective: 1000px; width: 100%; max-width: 450px; height: 350px; margin: 20px auto; }
+        .flip-card { position: relative; width: 100%; height: 100%; text-align: center; transition: transform 0.6s; transform-style: preserve-3d; cursor: pointer; }
+        .card-container.flipped .flip-card { transform: rotateY(180deg); }
+        .card-front, .card-back {
+            position: absolute; width: 100%; height: 100%; backface-visibility: hidden;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); padding: 20px; box-sizing: border-box;
+        }
+        .card-front { background-color: #fff; border: 2px solid #3498db; }
+        .card-back { background-color: #3498db; color: white; transform: rotateY(180deg); }
+        .hanzi { font-size: 4.5em; font-weight: bold; margin-bottom: 10px; color: #2c3e50; }
+        .pinyin { font-size: 1.6em; color: #7f8c8d; transition: opacity 0.3s; margin-bottom: 15px; }
+        
+        .btn-speak {
+            background-color: #27ae60; color: white; border: none; padding: 8px 20px;
+            border-radius: 20px; font-size: 1.1em; font-weight: bold; cursor: pointer;
+            transition: background 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .btn-speak:hover { background-color: #2ecc71; }
+
+        .type-badge { background-color: #f1c40f; color: #333; padding: 4px 12px; border-radius: 20px; font-size: 0.9em; font-weight: bold; margin-bottom: 15px; }
+        .meaning { font-size: 1.2em; line-height: 1.4; word-break: keep-all; margin-bottom: 15px; }
+        
+        .example-box { background-color: rgba(255, 255, 255, 0.15); padding: 15px; border-radius: 10px; width: 90%; }
+        .example-zh { font-size: 1.15em; font-weight: bold; margin-bottom: 5px; color: #fff; }
+        .example-ko { font-size: 0.95em; color: #e8f4f8; }
+
+        /* 실패 체크박스 스타일 */
+        .fail-container {
+            margin-top: 15px;
+            background-color: rgba(231, 76, 60, 0.8);
+            padding: 8px 15px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .fail-container label {
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        .fail-container input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .card-controls { display: flex; justify-content: space-between; align-items: center; max-width: 450px; margin: 0 auto 20px auto; }
+        .nav-btn { padding: 10px 20px; font-size: 1em; background-color: #2c3e50; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        .nav-btn:hover { background-color: #1a252f; }
+        .card-progress { font-weight: bold; color: #7f8c8d; }
+
+        /* 하단 컨트롤 버튼 영역 */
+        .action-btns { 
+            display: flex; 
+            flex-wrap: wrap;
+            justify-content: center; 
+            gap: 10px; 
+            margin-top: 20px; 
+            max-width: 500px;
+            margin-left: auto; margin-right: auto;
+        }
+        .action-btn { padding: 10px 15px; border-radius: 8px; border: none; font-size: 1em; font-weight: bold; cursor: pointer; transition: background-color 0.2s; }
+        .btn-shuffle { background-color: #9b59b6; color: white; }
+        .btn-shuffle:hover { background-color: #8e44ad; }
+        .btn-fail-mode { background-color: #e74c3c; color: white; }
+        .btn-fail-mode:hover { background-color: #c0392b; }
+        .btn-pinyin { background-color: #e67e22; color: white; }
+        .btn-pinyin:hover { background-color: #d35400; }
+        .btn-pinyin.off { background-color: #95a5a6; }
+
+        /* 4지선다 스타일 */
+        .mcq-question { font-size: 1.3em; font-weight: bold; margin-bottom: 25px; color: #2c3e50; line-height: 1.5; background-color: #f8f9fa; padding: 20px; border-radius: 8px; }
+        .mcq-type { display: inline-block; background-color: #e74c3c; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.7em; margin-bottom: 15px; vertical-align: middle; }
+        .mcq-options { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+        .mcq-btn { background-color: #fff; border: 2px solid #bdc3c7; padding: 20px; border-radius: 10px; font-size: 2.2em; font-weight: bold; cursor: pointer; transition: all 0.2s; color: #34495e; }
+        .mcq-btn:hover { border-color: #3498db; background-color: #ebf5fb; }
+        .mcq-btn.correct { background-color: #2ecc71; color: white; border-color: #27ae60; }
+        .mcq-btn.wrong { background-color: #e74c3c; color: white; border-color: #c0392b; }
+        
+        #mcqFeedback { font-size: 1.2em; font-weight: bold; min-height: 30px; margin-bottom: 15px; }
+        .btn-next-mcq { display: none; margin: 0 auto; padding: 12px 30px; background-color: #27ae60; color: white; border: none; border-radius: 5px; font-size: 1.1em; font-weight: bold; cursor: pointer; }
+        .btn-next-mcq:hover { background-color: #2ecc71; }
+        
+        .mcq-stats { display: flex; justify-content: space-between; margin-bottom: 20px; font-weight: bold; color: #7f8c8d; }
+
+        /* 하단 링크 버튼 영역 스타일 */
+        .link-section {
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            margin-top: 30px;
+            text-align: center;
+        }
+        .link-section h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.2em;
+        }
+        .link-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+        }
+        .link-btn {
+            display: inline-block;
+            padding: 12px 20px;
+            background-color: #34495e;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: all 0.3s;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+        }
+        .link-btn:hover {
+            background-color: #f39c12;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.15);
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🇨🇳 HSK 4급 [난이도 2] 전체 단어 마스터</h1>
+    <p class="subtitle">뜻 유추 카드 퀴즈 및 한자 4지선다형 객관식 퀴즈</p>
+
+    <!-- 탭 메뉴 -->
+    <div class="tab-container">
+        <button class="tab-btn active" id="tab1" onclick="switchMode(1)">🃏 카드 뜻 맞추기</button>
+        <button class="tab-btn" id="tab2" onclick="switchMode(2)">📝 4지선다 한자 맞추기</button>
+    </div>
+
+    <!-- 모드 1: 카드 퀴즈 -->
+    <div id="mode1" class="quiz-section active">
+        <p>💡 <b>학습 방법:</b> 카드를 클릭하면 뒷면에서 <b>뜻과 예문</b>을 확인할 수 있습니다.</p>
+        
+        <div class="card-controls">
+            <button class="nav-btn" onclick="prevCard()">◀ 이전</button>
+            <div class="card-progress" id="cardProgress">1 / 329</div>
+            <button class="nav-btn" onclick="nextCard()">다음 ▶</button>
+        </div>
+
+        <div class="card-container" id="flashcard" onclick="toggleCard()">
+            <div class="flip-card">
+                <div class="card-front">
+                    <div class="hanzi" id="cardHanzi"></div>
+                    <div class="pinyin" id="cardPinyin"></div>
+                    <button class="btn-speak" onclick="playAudio(event)">🔊 발음 듣기</button>
+                </div>
+                <div class="card-back">
+                    <div class="type-badge" id="cardType"></div>
+                    <div class="meaning" id="cardMeaning"></div>
+                    <div class="example-box">
+                        <div class="example-zh" id="cardExampleZh"></div>
+                        <div class="example-ko" id="cardExampleKo"></div>
+                    </div>
+                    <!-- 실패 체크 박스 영역 (이벤트 전파 방지로 카드 뒤집힘 방지) -->
+                    <div class="fail-container" onclick="event.stopPropagation()">
+                        <input type="checkbox" id="failCheck" onchange="toggleFailStatus(event)">
+                        <label for="failCheck">❌ 실패 (복습 리스트 추가)</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="action-btns">
+            <button class="action-btn btn-pinyin off" id="togglePinyinBtn" onclick="togglePinyin()">병음 켜기 🙈</button>
+            <button class="action-btn btn-fail-mode" onclick="playFailOnly()">🚨 실패한 단어만</button>
+            <button class="action-btn btn-shuffle" onclick="shuffleCards()">🔀 카드 섞기(전체)</button>
+        </div>
+    </div>
+
+    <!-- 모드 2: 4지선다 퀴즈 -->
+    <div id="mode2" class="quiz-section">
+        <p>💡 <b>학습 방법:</b> 주어진 뜻과 품사를 보고 알맞은 한자를 선택하세요.</p>
+        
+        <div class="mcq-stats">
+            <span id="mcqProgress">문제: 1 / 329</span>
+            <span id="mcqScore" style="color:#d35400;">점수: 0 점</span>
+        </div>
+
+        <div class="mcq-question">
+            <span class="mcq-type" id="mcqType"></span><br>
+            <span id="mcqMeaningText"></span>
+        </div>
+
+        <div class="mcq-options" id="mcqOptions"></div>
+
+        <div id="mcqFeedback"></div>
+        <button class="btn-next-mcq" id="mcqNextBtn" onclick="loadNextMcq()">다음 문제 ▶</button>
+    </div>
+
+    <!-- 하단 가상 링크 버튼 영역 (10개) -->
+    <div class="link-section">
+        <h3>🔗 관련 정보 및 추가 학습 이동</h3>
+        <div class="link-grid">
+            <a href="https://example.com/page1" target="_blank" class="link-btn">텍스트 1</a>
+            <a href="https://example.com/page2" target="_blank" class="link-btn">텍스트 2</a>
+            <a href="https://example.com/page3" target="_blank" class="link-btn">텍스트 3</a>
+            <a href="https://example.com/page4" target="_blank" class="link-btn">텍스트 4</a>
+            <a href="https://example.com/page5" target="_blank" class="link-btn">텍스트 5</a>
+            <a href="https://example.com/page6" target="_blank" class="link-btn">텍스트 6</a>
+            <a href="https://example.com/page7" target="_blank" class="link-btn">텍스트 7</a>
+            <a href="https://example.com/page8" target="_blank" class="link-btn">텍스트 8</a>
+            <a href="https://example.com/page9" target="_blank" class="link-btn">텍스트 9</a>
+            <a href="https://example.com/page10" target="_blank" class="link-btn">텍스트 10</a>
+        </div>
+    </div>
+
+<script>
+    // 난이도 2 전체 단어
+    const rawData = [
+        { hanzi: "矮", pinyin: "[ǎi]", type: "형용사", meaning: "(사람의 키가) 작다.", exampleZh: "他个子很矮。", exampleKo: "그는 키가 매우 작다." },
+        { hanzi: "爱好", pinyin: "[àihào]", type: "동사", meaning: "애호하다. …하기를 즐기다.", exampleZh: "我的爱好是看书。", exampleKo: "나의 취미는 독서이다." },
+        { hanzi: "安静", pinyin: "[ānjìng]", type: "형용사", meaning: "조용하다. 잠잠하다. 고요하다. 적막하다.", exampleZh: "请安静。", exampleKo: "조용히 해 주세요." },
+        { hanzi: "阿姨", pinyin: "[āyí]", type: "명사", meaning: "아주머니. 아줌마.", exampleZh: "王阿姨好。", exampleKo: "왕 아주머니 안녕하세요." },
+        { hanzi: "班", pinyin: "[bān]", type: "명사", meaning: "조. 그룹. 반.", exampleZh: "我们在一个班。", exampleKo: "우리는 같은 반이다." },
+        { hanzi: "帮忙", pinyin: "[bāngmáng]", type: "동사", meaning: "일(손)을 돕다. 도움을 주다. 원조하다. 거들어 주다.", exampleZh: "谢谢你帮忙。", exampleKo: "도와주셔서 감사합니다." },
+        { hanzi: "办公室", pinyin: "[bàngōngshì]", type: "명사", meaning: "사무실. 오피스(office).", exampleZh: "去办公室。", exampleKo: "사무실에 가다." },
+        { hanzi: "帮助", pinyin: "[bāngzhù]", type: "동사", meaning: "돕다. 원조하다. 보좌하다.", exampleZh: "帮助别人。", exampleKo: "다른 사람을 돕다." },
+        { hanzi: "饱", pinyin: "[bǎo]", type: "형용사", meaning: "배부르다.", exampleZh: "我吃饱了。", exampleKo: "나는 배불리 먹었다." },
+        { hanzi: "报纸", pinyin: "[bàozhǐ]", type: "명사", meaning: "신문.", exampleZh: "看报纸。", exampleKo: "신문을 보다." },
+        { hanzi: "北方", pinyin: "[běifāng]", type: "명사", meaning: "북방. 북쪽.", exampleZh: "他在北方。", exampleKo: "그는 북방에 있다." },
+        { hanzi: "比", pinyin: "[bǐ]", type: "동사", meaning: "비교하다. 재다. 겨루다.", exampleZh: "他比我高。", exampleKo: "그는 나보다 크다." },
+        { hanzi: "别", pinyin: "[bié]", type: "형용사/부사", meaning: "(형) 다른. 별개의 (부) ~하지 마라(=不要)", exampleZh: "别哭了。", exampleKo: "울지 마라." },
+        { hanzi: "别人", pinyin: "[biéren]", type: "대명사", meaning: "(일반적인) 남. 타인.", exampleZh: "帮助别人。", exampleKo: "남을 돕다." },
+        { hanzi: "鼻子", pinyin: "[bízi]", type: "명사", meaning: "코.", exampleZh: "大鼻子。", exampleKo: "큰 코." },
+        { hanzi: "菜单", pinyin: "[càidān]", type: "명사", meaning: "메뉴. 식단. 차림표.", exampleZh: "看菜单。", exampleKo: "메뉴판을 보다." },
+        { hanzi: "草", pinyin: "[cǎo]", type: "명사", meaning: "풀. [재배 식물을 제외한 초본 식물의 총칭]", exampleZh: "绿草。", exampleKo: "푸른 풀." },
+        { hanzi: "层", pinyin: "[céng]", type: "명사", meaning: "층.", exampleZh: "第一层。", exampleKo: "1층." },
+        { hanzi: "超市", pinyin: "[chāoshì]", type: "명사", meaning: "超级市场(슈퍼마켓)의 약칭.", exampleZh: "去超市买东西。", exampleKo: "슈퍼마켓에 가서 물건을 사다." },
+        { hanzi: "迟到", pinyin: "[chídào]", type: "동사", meaning: "지각하다.", exampleZh: "他迟到了。", exampleKo: "그는 지각했다." },
+        { hanzi: "船", pinyin: "[chuán]", type: "명사", meaning: "배. 선박.", exampleZh: "坐船。", exampleKo: "배를 타다." },
+        { hanzi: "穿", pinyin: "[chuān]", type: "동사", meaning: "(옷·신발·양말 등을) 입다. 신다", exampleZh: "穿衣服。", exampleKo: "옷을 입다." },
+        { hanzi: "春", pinyin: "[chūn]", type: "명사", meaning: "봄. 봄철. 춘계.", exampleZh: "春天来了。", exampleKo: "봄이 왔다." },
+        { hanzi: "出租车", pinyin: "[chūzūchē]", type: "명사", meaning: "택시.", exampleZh: "打出租车。", exampleKo: "택시를 잡다." },
+        { hanzi: "次", pinyin: "[cì]", type: "동사", meaning: "번(회).", exampleZh: "去过一次。", exampleKo: "한 번 가봤다." },
+        { hanzi: "词典", pinyin: "[cídiǎn]", type: "명사", meaning: "사전.", exampleZh: "买词典。", exampleKo: "사전을 사다." },
+        { hanzi: "从", pinyin: "[cóng]", type: "개사", meaning: "~로 부터.", exampleZh: "从这里开始。", exampleKo: "여기서부터 시작하다." },
+        { hanzi: "错", pinyin: "[cuò]", type: "동사", meaning: "틀리다. 맞지 않다.", exampleZh: "写错了。", exampleKo: "잘못 썼다." },
+        { hanzi: "打篮球", pinyin: "[dǎlánqiú]", type: "동사", meaning: "농구를 하다", exampleZh: "喜欢打篮球。", exampleKo: "농구하는 것을 좋아하다." },
+        { hanzi: "蛋糕", pinyin: "[dàngāo]", type: "명사", meaning: "케이크.", exampleZh: "吃蛋糕。", exampleKo: "케이크를 먹다." },
+        { hanzi: "当然", pinyin: "[dāngrán]", type: "형용사", meaning: "당연하다. 물론이다.", exampleZh: "当然可以。", exampleKo: "물론이지." },
+        { hanzi: "但是", pinyin: "[dànshì]", type: "접속사", meaning: "그러나. 그렇지만. [주로 ‘ ’ 등과 호응하여 쓰임]", exampleZh: "好是好，但是太贵了。", exampleKo: "좋기는 한데, 그러나 너무 비싸다." },
+        { hanzi: "灯", pinyin: "[dēng]", type: "명사", meaning: "등. 등롱. 램프. 라이트. 랜턴.", exampleZh: "开灯。", exampleKo: "불(등)을 켜다." },
+        { hanzi: "点", pinyin: "[diǎn]", type: "동사", meaning: "주문하다", exampleZh: "点菜。", exampleKo: "요리를 주문하다." },
+        { hanzi: "电梯", pinyin: "[diàntī]", type: "명사", meaning: "엘리베이터.", exampleZh: "坐电梯。", exampleKo: "엘리베이터를 타다." },
+        { hanzi: "电子邮件", pinyin: "[diànzǐyóujiàn]", type: "명사", meaning: "전자 우편. 이메일.", exampleZh: "发电子邮件。", exampleKo: "이메일을 보내다." },
+        { hanzi: "地方", pinyin: "[dìfang]", type: "명사", meaning: "부분. 점.곳.장소", exampleZh: "好地方。", exampleKo: "좋은 곳." },
+        { hanzi: "地铁", pinyin: "[dìtiě]", type: "명사", meaning: "지하철.", exampleZh: "坐地铁。", exampleKo: "지하철을 타다." },
+        { hanzi: "地图", pinyin: "[dìtú]", type: "명사", meaning: "지도.", exampleZh: "看地图。", exampleKo: "지도를 보다." },
+        { hanzi: "懂", pinyin: "[dǒng]", type: "동사", meaning: "알다. 이해하다. 터득하다. 정통하다.", exampleZh: "我懂了。", exampleKo: "나는 이해했다." },
+        { hanzi: "东", pinyin: "[dōng]", type: "명사", meaning: "동쪽. 동녘. 동편. 동방.", exampleZh: "东边。", exampleKo: "동쪽." },
+        { hanzi: "冬", pinyin: "[dōng]", type: "명사", meaning: "겨울. 겨울철. 동계.", exampleZh: "冬天很冷。", exampleKo: "겨울은 매우 춥다." },
+        { hanzi: "动物", pinyin: "[dòngwù]", type: "명사", meaning: "동물.", exampleZh: "小动物。", exampleKo: "작은 동물." },
+        { hanzi: "短", pinyin: "[duǎn]", type: "형용사", meaning: "(공간적 거리가) 짧다.", exampleZh: "头发很短。", exampleKo: "머리카락이 매우 짧다." },
+        { hanzi: "对", pinyin: "[duì]", type: "개사", meaning: "…에 대해(서). …에 대하여. [동작이나 행위의 대상을 이끌어 냄]", exampleZh: "对我很好。", exampleKo: "나에게 잘해준다." },
+        { hanzi: "多么", pinyin: "[duōme]", type: "부사", meaning: "얼마나. [감탄문에서 정도가 심함을 나타냄]", exampleZh: "多么漂亮啊！", exampleKo: "얼마나 예쁜가!" },
+        { hanzi: "饿", pinyin: "[è]", type: "형용사", meaning: "배고프다.", exampleZh: "我很饿。", exampleKo: "나는 매우 배고프다." },
+        { hanzi: "耳朵", pinyin: "[ěrduo]", type: "명사", meaning: "귀.", exampleZh: "大耳朵。", exampleKo: "큰 귀." },
+        { hanzi: "发", pinyin: "[fā]", type: "동사", meaning: "보내다. 건네주다. 교부하다. 발급하다. 부치다. 발송하다. 치다. 내주다.", exampleZh: "发短信。", exampleKo: "문자를 보내다." },
+        { hanzi: "饭店", pinyin: "[fàndiàn]", type: "명사", meaning: "호텔.", exampleZh: "去饭店。", exampleKo: "호텔(식당)에 가다." },
+        { hanzi: "放", pinyin: "[fàng]", type: "동사", meaning: "(자유롭게) 놓아주다. 풀어 주다. 석방하다.", exampleZh: "放在桌子上。", exampleKo: "책상 위에 놓다." },
+        { hanzi: "方便", pinyin: "[fāngbiàn]", type: "형용사", meaning: "편리하다.", exampleZh: "很方便。", exampleKo: "매우 편리하다." },
+        { hanzi: "放心", pinyin: "[fàngxīn]", type: "동사", meaning: "마음을 놓다. 안심하다.", exampleZh: "请放心。", exampleKo: "안심하세요." },
+        { hanzi: "非常", pinyin: "[fēicháng]", type: "부사", meaning: "대단히. 매우. 심히. 아주.", exampleZh: "非常好。", exampleKo: "매우 좋다." },
+        { hanzi: "分", pinyin: "[fēn]", type: "동사", meaning: "나누다. 가르다. 분류하다. 분리하다. 구분하다.", exampleZh: "分成两半。", exampleKo: "두 개로 나누다." },
+        { hanzi: "附近", pinyin: "[fùjìn]", type: "형용사", meaning: "가까운. 인접한.", exampleZh: "在附近。", exampleKo: "근처에 있다." },
+        { hanzi: "服务员", pinyin: "[fúwùyuán]", type: "명사", meaning: "(서비스업의) 종업원. 웨이터.", exampleZh: "叫服务员。", exampleKo: "종업원을 부르다." },
+        { hanzi: "干净", pinyin: "[gānjìng]", type: "형용사", meaning: "깨끗하다. 청결하다. 말끔하다.", exampleZh: "房间很干净。", exampleKo: "방이 매우 깨끗하다." },
+        { hanzi: "告诉", pinyin: "[gàosu]", type: "동사", meaning: "말하다. 알리다.", exampleZh: "告诉我。", exampleKo: "나에게 알려줘." },
+        { hanzi: "跟", pinyin: "[gēn]", type: "개사", meaning: "(명사) (～儿) 발뒤꿈치. (구두) 굽. 뒷굽. 양말 뒤축. (개사)~와", exampleZh: "跟我来。", exampleKo: "나와 함께 오다(나를 따라와라)." },
+        { hanzi: "更", pinyin: "[gèng]", type: "부사", meaning: "더욱. 더. 훨씬. 한층 더. 가일층. 더군다나. 보다 더.", exampleZh: "更好。", exampleKo: "더욱 좋다." },
+        { hanzi: "个子", pinyin: "[gèzi]", type: "명사", meaning: "(사람의) 키. 체격.", exampleZh: "个子高。", exampleKo: "키가 크다." },
+        { hanzi: "公共汽车", pinyin: "[gōnggòngqìchē]", type: "명사", meaning: "버스.", exampleZh: "坐公共汽车。", exampleKo: "버스를 타다." },
+        { hanzi: "公斤", pinyin: "[gōngjīn]", type: "명사", meaning: "킬로그램(kg).", exampleZh: "一公斤。", exampleKo: "1킬로그램." },
+        { hanzi: "公司", pinyin: "[gōngsī]", type: "명사", meaning: "회사. 직장.", exampleZh: "去公司。", exampleKo: "회사에 가다." },
+        { hanzi: "公园", pinyin: "[gōngyuán]", type: "명사", meaning: "공원.", exampleZh: "去公园玩。", exampleKo: "공원에 놀러가다." },
+        { hanzi: "刮风", pinyin: "[guāfēng]", type: "동사", meaning: "바람이 불다.", exampleZh: "今天刮风。", exampleKo: "오늘 바람이 분다." },
+        { hanzi: "关", pinyin: "[guān]", type: "동사", meaning: "닫다. 덮다.끄다", exampleZh: "关门。", exampleKo: "문을 닫다." },
+        { hanzi: "贵", pinyin: "[guì]", type: "형용사", meaning: "(가격이나 가치가) 높다. 비싸다. 귀하다. 귀중하다.", exampleZh: "太贵了。", exampleKo: "너무 비싸다." },
+        { hanzi: "过", pinyin: "[guo]", type: "조사", meaning: "동사 뒤에 쓰여 동작의 경험을 나타냄.", exampleZh: "吃过。", exampleKo: "먹어봤다." },
+        { hanzi: "国家", pinyin: "[guójiā]", type: "명사", meaning: "국가. 나라.", exampleZh: "一个国家。", exampleKo: "하나의 국가." },
+        { hanzi: "过去", pinyin: "[guòqù]", type: "동사", meaning: "지나가다. [화자나 서술 대상이 있는 시점이나 지점을 거쳐 지나감을 나타냄]", exampleZh: "走过去。", exampleKo: "걸어가다." },
+        { hanzi: "故事", pinyin: "[gùshi]", type: "명사", meaning: "이야기. 옛날 이야기.", exampleZh: "听故事。", exampleKo: "이야기를 듣다." },
+        { hanzi: "还", pinyin: "[hái]", type: "부사", meaning: "여전히. 아직도. 아직.", exampleZh: "还没有。", exampleKo: "아직 안했다." },
+        { hanzi: "害怕", pinyin: "[hàipà]", type: "동사", meaning: "겁내다. 두려워하다. 무서워하다.", exampleZh: "很害怕。", exampleKo: "매우 두렵다." },
+        { hanzi: "还是", pinyin: "[háishi]", type: "부사", meaning: "여전히. 아직도. 그래도. 아니면.", exampleZh: "去还是不去？", exampleKo: "갈 건가 아니면 안 갈 건가?" },
+        { hanzi: "黑板", pinyin: "[hēibǎn]", type: "명사", meaning: "칠판.", exampleZh: "看黑板。", exampleKo: "칠판을 보다." },
+        { hanzi: "后来", pinyin: "[hòulái]", type: "명사", meaning: "그 후. 그 뒤. 그 다음.", exampleZh: "后来他走了。", exampleKo: "그 후 그는 떠났다." },
+        { hanzi: "画", pinyin: "[huà]", type: "동사", meaning: "(그림을) 그리다.", exampleZh: "画画儿。", exampleKo: "그림을 그리다." },
+        { hanzi: "坏", pinyin: "[huài]", type: "형용사", meaning: "나쁘다.", exampleZh: "手机坏了。", exampleKo: "핸드폰이 망가졌다." },
+        { hanzi: "还", pinyin: "[huán]", type: "동사", meaning: "돌아가다. 돌아오다. (원상태로) 되돌아가다. 환원하다.", exampleZh: "还书。", exampleKo: "책을 반납하다." },
+        { hanzi: "换", pinyin: "[huàn]", type: "동사", meaning: "교환하다.", exampleZh: "换钱。", exampleKo: "돈을 환전하다." },
+        { hanzi: "欢迎", pinyin: "[huānyíng]", type: "동사", meaning: "환영하다. 기쁘게 맞이하다〔영접하다〕.", exampleZh: "欢迎光临。", exampleKo: "오신 것을 환영합니다." },
+        { hanzi: "回答", pinyin: "[huídá]", type: "동사", meaning: "대답하다. 회답하다. 응답하다.", exampleZh: "回答问题。", exampleKo: "질문에 대답하다." },
+        { hanzi: "火车站", pinyin: "[huǒchēzhàn]", type: "명사", meaning: "기차역.", exampleZh: "去火车站。", exampleKo: "기차역에 가다." },
+        { hanzi: "件", pinyin: "[jiàn]", type: "명사", meaning: "(～儿) (총체 중에서 하나하나 셀 수 있는) 일·사건·개체 등의 수량 단위.", exampleZh: "一件事。", exampleKo: "한 가지 일." },
+        { hanzi: "简单", pinyin: "[jiǎndān]", type: "형용사", meaning: "간단하다. 단순하다. 쉽다.", exampleZh: "很简单。", exampleKo: "매우 간단하다." },
+        { hanzi: "讲", pinyin: "[jiǎng]", type: "동사", meaning: "말하다. 이야기하다. 평론하다. 강연하다. 설명하다", exampleZh: "讲故事。", exampleKo: "이야기를 하다." },
+        { hanzi: "健康", pinyin: "[jiànkāng]", type: "형용사", meaning: "건강하다.", exampleZh: "身体健康。", exampleKo: "몸이 건강하다." },
+        { hanzi: "见面", pinyin: "[jiànmiàn]", type: "동사", meaning: "만나다. 대면하다.", exampleZh: "跟朋友见面。", exampleKo: "친구와 만나다." },
+        { hanzi: "脚", pinyin: "[jiǎo]", type: "명사", meaning: "발.", exampleZh: "一只脚。", exampleKo: "발 한 쪽." },
+        { hanzi: "教", pinyin: "[jiāo]", type: "동사", meaning: "(지식 또는 기술을) 전수하다. 가르치다.", exampleZh: "教汉语。", exampleKo: "중국어를 가르치다." },
+        { hanzi: "机场", pinyin: "[jīchǎng]", type: "명사", meaning: "공항. 비행장", exampleZh: "去机场。", exampleKo: "공항에 가다." },
+        { hanzi: "记得", pinyin: "[jìde]", type: "동사", meaning: "기억하고 있다. 잊지 않고 있다.", exampleZh: "我记得你。", exampleKo: "나는 너를 기억한다." },
+        { hanzi: "借", pinyin: "[jiè]", type: "동사", meaning: "빌리다.", exampleZh: "借书。", exampleKo: "책을 빌리다." },
+        { hanzi: "接", pinyin: "[jiē]", type: "동사", meaning: "잇다. 이어지다. 연결하다. 연결되다.", exampleZh: "接电话。", exampleKo: "전화를 받다." },
+        { hanzi: "结婚", pinyin: "[jiéhūn]", type: "동사", meaning: "결혼하다.", exampleZh: "他们结婚了。", exampleKo: "그들은 결혼했다." },
+        { hanzi: "介绍", pinyin: "[jièshào]", type: "동사", meaning: "소개하다.", exampleZh: "自我介绍。", exampleKo: "자기소개." },
+        { hanzi: "机会", pinyin: "[jīhuì]", type: "명사", meaning: "기회. 시기. 찬스.", exampleZh: "好机会。", exampleKo: "좋은 기회." },
+        { hanzi: "经常", pinyin: "[jīngcháng]", type: "명사", meaning: "평소. 평상. 보통. 일상.", exampleZh: "经常去。", exampleKo: "자주 가다." },
+        { hanzi: "旧", pinyin: "[jiù]", type: "형용사", meaning: "헐다. 낡다. 오래다. 오래 되다.", exampleZh: "旧衣服。", exampleKo: "낡은 옷." },
+        { hanzi: "久", pinyin: "[jiǔ]", type: "형용사", meaning: "오래다. 시간이 길다.", exampleZh: "很久不见。", exampleKo: "오랜만이다." },
+        { hanzi: "觉得", pinyin: "[juéde]", type: "동사", meaning: "…라고 여기다〔생각하다〕.", exampleZh: "我觉得很好。", exampleKo: "내 생각엔 아주 좋다." },
+        { hanzi: "句子", pinyin: "[jùzi]", type: "명사", meaning: "문(文). 문장.", exampleZh: "写句子。", exampleKo: "문장을 쓰다." },
+        { hanzi: "开始", pinyin: "[kāishǐ]", type: "동사", meaning: "시작되다. 개시하다.", exampleZh: "比赛开始。", exampleKo: "경기가 시작되다." },
+        { hanzi: "考试", pinyin: "[kǎoshì]", type: "동사", meaning: "시험을 치다. 고사를 치다.", exampleZh: "准备考试。", exampleKo: "시험을 준비하다." },
+        { hanzi: "渴", pinyin: "[kě]", type: "형용사", meaning: "목이 타다. 목마르다. 갈증나다.", exampleZh: "我很渴。", exampleKo: "나는 매우 목이 마르다." },
+        { hanzi: "可爱", pinyin: "[kě'ài]", type: "형용사", meaning: "사랑스럽다. 귀엽다.", exampleZh: "可爱的小狗。", exampleKo: "귀여운 강아지." },
+        { hanzi: "可能", pinyin: "[kěnéng]", type: "형용사", meaning: "가능하다.", exampleZh: "不可能。", exampleKo: "불가능하다." },
+        { hanzi: "客人", pinyin: "[kèrén]", type: "명사", meaning: "손님. 방문객.", exampleZh: "家里有客人。", exampleKo: "집에 손님이 있다." },
+        { hanzi: "哭", pinyin: "[kū]", type: "동사", meaning: "(소리내어) 울다.", exampleZh: "别哭了。", exampleKo: "울지 마라." },
+        { hanzi: "块", pinyin: "[kuài]", type: "명사", meaning: "덩이. 덩어리.", exampleZh: "一块钱。", exampleKo: "1위안." },
+        { hanzi: "快乐", pinyin: "[kuàilè]", type: "형용사", meaning: "즐겁다. 행복하다. 유쾌하다.", exampleZh: "生日快乐。", exampleKo: "생일 축하해." },
+        { hanzi: "裤子", pinyin: "[kùzi]", type: "명사", meaning: "바지.", exampleZh: "一条裤子。", exampleKo: "바지 한 벌." },
+        { hanzi: "蓝", pinyin: "[lán]", type: "형용사", meaning: "남색의. 남빛의.", exampleZh: "蓝天。", exampleKo: "파란 하늘." },
+        { hanzi: "累", pinyin: "[lèi]", type: "형용사", meaning: "지치다. 피곤하다.", exampleZh: "我太累了。", exampleKo: "나는 너무 피곤하다." },
+        { hanzi: "离", pinyin: "[lí]", type: "개사", meaning: "…에서. …로부터. …까지. (거리가 얼만큼 떨어져있는지를 나타냄)", exampleZh: "离家很远。", exampleKo: "집에서 매우 멀다." },
+        { hanzi: "脸", pinyin: "[liǎn]", type: "명사", meaning: "얼굴.", exampleZh: "洗脸。", exampleKo: "얼굴을 씻다(세수하다)." },
+        { hanzi: "辆", pinyin: "[liàng]", type: "양사", meaning: "대. 량. [차량을 세는 단위]", exampleZh: "一辆车。", exampleKo: "차 한 대." },
+        { hanzi: "练习", pinyin: "[liànxí]", type: "동사", meaning: "연습하다. 익히다.", exampleZh: "练习口语。", exampleKo: "회화를 연습하다." },
+        { hanzi: "零", pinyin: "[líng]", type: "수사", meaning: "영. 제로(zero).", exampleZh: "零下五度。", exampleKo: "영하 5도." },
+        { hanzi: "礼物", pinyin: "[lǐwù]", type: "명사", meaning: "선물. 예물.", exampleZh: "买礼物。", exampleKo: "선물을 사다." },
+        { hanzi: "楼", pinyin: "[lóu]", type: "명사", meaning: "(이층 이상의) 다층 건물. 층집. 층. 계단", exampleZh: "上楼。", exampleKo: "건물(층)에 오르다." },
+        { hanzi: "绿", pinyin: "[lǜ]", type: "형용사", meaning: "푸르다.", exampleZh: "绿茶。", exampleKo: "녹차." },
+        { hanzi: "旅游", pinyin: "[lǚyóu]", type: "동사", meaning: "여행하다. 관광하다.", exampleZh: "去旅游。", exampleKo: "여행을 가다." },
+        { hanzi: "帽子", pinyin: "[màozi]", type: "명사", meaning: "모자.", exampleZh: "戴帽子。", exampleKo: "모자를 쓰다." },
+        { hanzi: "马上", pinyin: "[mǎshàng]", type: "부사", meaning: "곧. 즉시. 바로. 금방.", exampleZh: "马上来。", exampleKo: "금방 올게." },
+        { hanzi: "面条", pinyin: "[miàntiáo]", type: "명사", meaning: "국수.", exampleZh: "吃面条。", exampleKo: "국수를 먹다." },
+        { hanzi: "明白", pinyin: "[míngbai]", type: "동사", meaning: "알다. 이해하다.", exampleZh: "听明白了。", exampleKo: "듣고 이해했다." },
+        { hanzi: "拿", pinyin: "[ná]", type: "동사", meaning: "(손으로) 쥐다. 잡다. 가지다.", exampleZh: "拿东西。", exampleKo: "물건을 가지다." },
+        { hanzi: "难", pinyin: "[nán]", type: "형용사", meaning: "어렵다. 힘들다. 곤란하다.", exampleZh: "很难。", exampleKo: "매우 어렵다." },
+        { hanzi: "呢", pinyin: "[ne]", type: "조사", meaning: "서술문 뒤에 쓰여 동작이나 상황이 지속됨을 나타냄.", exampleZh: "他在看书呢。", exampleKo: "그는 책을 보고 있는 중이다." },
+        { hanzi: "年级", pinyin: "[niánjí]", type: "명사", meaning: "학년.", exampleZh: "大学一年级。", exampleKo: "대학교 1학년." },
+        { hanzi: "年轻", pinyin: "[niánqīng]", type: "형용사", meaning: "젊다. 어리다.", exampleZh: "年轻人。", exampleKo: "젊은이." },
+        { hanzi: "鸟", pinyin: "[niǎo]", type: "명사", meaning: "새. 날짐승.", exampleZh: "小鸟。", exampleKo: "작은 새." },
+        { hanzi: "努力", pinyin: "[nǔlì]", type: "동사", meaning: "노력하다. 힘쓰다. 열심히 하다.", exampleZh: "努力学习。", exampleKo: "열심히 공부하다." },
+        { hanzi: "胖", pinyin: "[pàng]", type: "형용사", meaning: "(몸이) 뚱뚱하다.", exampleZh: "他很胖。", exampleKo: "그는 매우 뚱뚱하다." },
+        { hanzi: "旁边", pinyin: "[pángbiān]", type: "명사", meaning: "옆. 곁. 근처. 부근.", exampleZh: "在我旁边。", exampleKo: "내 옆에 있다." },
+        { hanzi: "跑步", pinyin: "[pǎobù]", type: "동사", meaning: "달리다. 뛰다", exampleZh: "去跑步。", exampleKo: "조깅하러 가다." },
+        { hanzi: "爬山", pinyin: "[páshān]", type: "동사", meaning: "산을 오르다. 등산하다.", exampleZh: "周末去爬山。", exampleKo: "주말에 등산 간다." },
+        { hanzi: "便宜", pinyin: "[piányi]", type: "형용사", meaning: "(값이) 싸다. 헐하다.", exampleZh: "很便宜。", exampleKo: "매우 싸다." },
+        { hanzi: "票", pinyin: "[piào]", type: "명사", meaning: "표. 티켓(ticket). 증서. 증명서. 어음. 수표. 주식. 유가 증권.", exampleZh: "买票。", exampleKo: "표를 사다." },
+        { hanzi: "啤酒", pinyin: "[píjiǔ]", type: "명사", meaning: "맥주.", exampleZh: "喝啤酒。", exampleKo: "맥주를 마시다." },
+        { hanzi: "瓶子", pinyin: "[píngzi]", type: "명사", meaning: "병.", exampleZh: "一个瓶子。", exampleKo: "병 한 개." },
+        { hanzi: "皮鞋", pinyin: "[píxié]", type: "명사", meaning: "가죽 구두.", exampleZh: "穿皮鞋。", exampleKo: "가죽 구두를 신다." },
+        { hanzi: "骑", pinyin: "[qí]", type: "동사", meaning: "(동물이나 자전거 등에) 타다.", exampleZh: "骑自行车。", exampleKo: "자전거를 타다." },
+        { hanzi: "铅笔", pinyin: "[qiānbǐ]", type: "명사", meaning: "연필.", exampleZh: "用铅笔写。", exampleKo: "연필로 쓰다." },
+        { hanzi: "起床", pinyin: "[qǐchuáng]", type: "동사", meaning: "(잠자리에서) 일어나다.", exampleZh: "早上起床。", exampleKo: "아침에 일어나다." },
+        { hanzi: "起来", pinyin: "[qǐlai]", type: "동사", meaning: "(잠자리에서) 일어나다.", exampleZh: "站起来。", exampleKo: "일어서다." },
+        { hanzi: "晴", pinyin: "[qíng]", type: "형용사", meaning: "하늘이 맑다.", exampleZh: "晴天。", exampleKo: "맑은 날." },
+        { hanzi: "秋", pinyin: "[qiū]", type: "명사", meaning: "가을.", exampleZh: "秋天到了。", exampleKo: "가을이 왔다." },
+        { hanzi: "妻子", pinyin: "[qīzi]", type: "명사", meaning: "아내.", exampleZh: "他的妻子。", exampleKo: "그의 아내." },
+        { hanzi: "去年", pinyin: "[qùnián]", type: "명사", meaning: "작년.", exampleZh: "去年去的。", exampleKo: "작년에 갔다." },
+        { hanzi: "裙子", pinyin: "[qúnzi]", type: "명사", meaning: "치마. 스커트.", exampleZh: "穿裙子。", exampleKo: "치마를 입다." },
+        { hanzi: "让", pinyin: "[ràng]", type: "동사", meaning: "사양하다. 양보하다. 시키다.", exampleZh: "让他去吧。", exampleKo: "그를 가게 둬라." },
+        { hanzi: "容易", pinyin: "[róngyì]", type: "형용사", meaning: "쉽다. 용이하다.", exampleZh: "很容易。", exampleKo: "매우 쉽다." },
+        { hanzi: "伞", pinyin: "[sǎn]", type: "명사", meaning: "우산.", exampleZh: "带伞。", exampleKo: "우산을 챙기다." },
+        { hanzi: "上班", pinyin: "[shàngbān]", type: "동사", meaning: "출근하다.", exampleZh: "去上班。", exampleKo: "출근하러 가다." },
+        { hanzi: "上网", pinyin: "[shàngwǎng]", type: "동사", meaning: "인터넷을 하다. 인터넷을 연결하다.", exampleZh: "上网看新闻。", exampleKo: "인터넷으로 뉴스를 보다." },
+        { hanzi: "生病", pinyin: "[shēngbìng]", type: "동사", meaning: "병이 나다. 발병하다. 병에 걸리다.", exampleZh: "我生病了。", exampleKo: "나는 병이 났다." },
+        { hanzi: "生气", pinyin: "[shēngqì]", type: "동사", meaning: "화내다. 성나다.", exampleZh: "别生气。", exampleKo: "화내지 마라." },
+        { hanzi: "身体", pinyin: "[shēntǐ]", type: "명사", meaning: "몸. 신체.", exampleZh: "身体好。", exampleKo: "몸이 건강하다." },
+        { hanzi: "试", pinyin: "[shì]", type: "동사", meaning: "시험삼아 해 보다. 시험하다. 시도하다", exampleZh: "试一下。", exampleKo: "한 번 입어(해)보다." },
+        { hanzi: "时间", pinyin: "[shíjiān]", type: "명사", meaning: "시간.", exampleZh: "没有时间。", exampleKo: "시간이 없다." },
+        { hanzi: "事情", pinyin: "[shìqing]", type: "명사", meaning: "일. 사건.", exampleZh: "什么事情？", exampleKo: "무슨 일이야?" },
+        { hanzi: "手表", pinyin: "[shǒubiǎo]", type: "명사", meaning: "손목시계.", exampleZh: "买手表。", exampleKo: "손목시계를 사다." },
+        { hanzi: "手机", pinyin: "[shǒujī]", type: "명사", meaning: "휴대폰. 휴대 전화기.", exampleZh: "看手机。", exampleKo: "휴대폰을 보다." },
+        { hanzi: "树", pinyin: "[shù]", type: "명사", meaning: "나무. 수목.", exampleZh: "种树。", exampleKo: "나무를 심다." },
+        { hanzi: "双", pinyin: "[shuāng]", type: "양사", meaning: "짝. 켤레. 쌍. 매.", exampleZh: "一双鞋。", exampleKo: "신발 한 켤레." },
+        { hanzi: "刷牙", pinyin: "[shuāyá]", type: "동사", meaning: "이를 닦다. 양치질하다.", exampleZh: "早上刷牙。", exampleKo: "아침에 양치하다." },
+        { hanzi: "舒服", pinyin: "[shūfu]", type: "형용사", meaning: "(몸·마음이) 편안하다. 쾌적하다. 가볍다. 가뿐하다. 홀가분하다. 유쾌하다...", exampleZh: "不舒服。", exampleKo: "불편하다(몸이 안 좋다)." },
+        { hanzi: "水平", pinyin: "[shuǐpíng]", type: "명사", meaning: "실력. 수준. 능력.", exampleZh: "汉语水平。", exampleKo: "중국어 실력." },
+        { hanzi: "叔叔", pinyin: "[shūshu]", type: "명사", meaning: "숙부. 작은아버지. 삼촌.", exampleZh: "王叔叔。", exampleKo: "왕 삼촌." },
+        { hanzi: "数学", pinyin: "[shùxué]", type: "명사", meaning: "수학.", exampleZh: "数学题。", exampleKo: "수학 문제." },
+        { hanzi: "司机", pinyin: "[sījī]", type: "명사", meaning: "(자동차·전차·기차 등의) 기사. 운전사. 기관사. 조종사.", exampleZh: "出租车司机。", exampleKo: "택시 기사." },
+        { hanzi: "送", pinyin: "[sòng]", type: "동사", meaning: "배웅하다. 전송하다. 데려다 주다.", exampleZh: "送你回家。", exampleKo: "너를 집에 데려다 줄게." },
+        { hanzi: "虽然", pinyin: "[suīrán]", type: "접속사", meaning: "비록 …하지만〔일지라도〕. 설령 …일지라도.", exampleZh: "虽然很累...", exampleKo: "비록 매우 피곤하지만..." },
+        { hanzi: "所以", pinyin: "[suǒyǐ]", type: "접속사", meaning: "그래서. 그러므로. 그런 까닭에. 때문에.", exampleZh: "所以我不去。", exampleKo: "그래서 나는 안 간다." },
+        { hanzi: "它", pinyin: "[tā]", type: "대명사", meaning: "그. 저. 그것. 저것. [사람 이외의 것을 가리킴]", exampleZh: "它是小狗。", exampleKo: "그것은 강아지다." },
+        { hanzi: "太阳", pinyin: "[tàiyáng]", type: "명사", meaning: "태양. 해.", exampleZh: "太阳出来了。", exampleKo: "해가 나왔다." },
+        { hanzi: "特别", pinyin: "[tèbié]", type: "형용사", meaning: "특별하다. 특이하다. 별다르다. 보통이 아니다.", exampleZh: "特别好。", exampleKo: "특별히 좋다." },
+        { hanzi: "疼", pinyin: "[téng]", type: "형용사", meaning: "아프다.", exampleZh: "头疼。", exampleKo: "머리가 아프다." },
+        { hanzi: "题", pinyin: "[tí]", type: "명사", meaning: "제목.", exampleZh: "这个问题。", exampleKo: "이 문제." },
+        { hanzi: "甜", pinyin: "[tián]", type: "형용사", meaning: "(설탕이나 꿀처럼) 달다. 달콤하다.", exampleZh: "很甜。", exampleKo: "매우 달다." },
+        { hanzi: "条", pinyin: "[tiáo]", type: "양사", meaning: "(～儿) 가늘고 긴 것. 폭이 좁고 긴 것.", exampleZh: "一条鱼。", exampleKo: "물고기 한 마리." },
+        { hanzi: "跳舞", pinyin: "[tiàowǔ]", type: "동사", meaning: "춤을 추다.", exampleZh: "喜欢跳舞。", exampleKo: "춤추는 것을 좋아하다." },
+        { hanzi: "体育", pinyin: "[tǐyù]", type: "명사", meaning: "체육.", exampleZh: "体育课。", exampleKo: "체육 시간." },
+        { hanzi: "踢足球", pinyin: "[tīzúqiú]", type: "동사", meaning: "축구를 하다.", exampleZh: "去踢足球。", exampleKo: "축구하러 가다." },
+        { hanzi: "同事", pinyin: "[tóngshì]", type: "명사", meaning: "동료", exampleZh: "我的同事。", exampleKo: "내 동료." },
+        { hanzi: "同意", pinyin: "[tóngyì]", type: "동사", meaning: "동의하다. 찬성하다. 승인하다. 허락하다.", exampleZh: "我同意。", exampleKo: "나는 동의한다." },
+        { hanzi: "头发", pinyin: "[tóufa]", type: "명사", meaning: "머리카락. 두발. 머리털.", exampleZh: "长头发。", exampleKo: "긴 머리카락." },
+        { hanzi: "腿", pinyin: "[tuǐ]", type: "명사", meaning: "다리.", exampleZh: "腿疼。", exampleKo: "다리가 아프다." },
+        { hanzi: "图书馆", pinyin: "[túshūguǎn]", type: "명사", meaning: "도서관.", exampleZh: "去图书馆。", exampleKo: "도서관에 가다." },
+        { hanzi: "完", pinyin: "[wán]", type: "형용사", meaning: "다 소모하다. 다하다. 없어지다. 다 떨어지다. 완료하다.", exampleZh: "吃完了。", exampleKo: "다 먹었다." },
+        { hanzi: "碗", pinyin: "[wǎn]", type: "양사", meaning: "사발. 공기. 주발. 그릇.", exampleZh: "一碗米饭。", exampleKo: "밥 한 그릇." },
+        { hanzi: "完成", pinyin: "[wánchéng]", type: "동사", meaning: "완성하다. (예정대로) 끝내다. 완수하다.", exampleZh: "完成作业。", exampleKo: "숙제를 마치다." },
+        { hanzi: "往", pinyin: "[wǎng]", type: "개사", meaning: "(…로) 향하다.", exampleZh: "往前走。", exampleKo: "앞으로 가다." },
+        { hanzi: "忘记", pinyin: "[wàngjì]", type: "동사", meaning: "(지난 일을) 잊어버리다.", exampleZh: "我忘记了。", exampleKo: "나는 잊어버렸다." },
+        { hanzi: "为", pinyin: "[wèi]", type: "개사/동사", meaning: "…에게 (…을 해 주다). …을 위하여 (…을 하다).", exampleZh: "为你高兴。", exampleKo: "너를 위해 기뻐하다." },
+        { hanzi: "位", pinyin: "[wèi]", type: "양사", meaning: "~분", exampleZh: "一位老师。", exampleKo: "선생님 한 분." },
+        { hanzi: "为了", pinyin: "[wèile]", type: "개사", meaning: "…을〔를〕 하기 위하여.", exampleZh: "为了健康。", exampleKo: "건강을 위하여." },
+        { hanzi: "文化", pinyin: "[wénhuà]", type: "명사", meaning: "문화.", exampleZh: "中国文化。", exampleKo: "중국 문화." },
+        { hanzi: "夏", pinyin: "[xià]", type: "명사", meaning: "여름.", exampleZh: "夏天很热。", exampleKo: "여름은 덥다." },
+        { hanzi: "先", pinyin: "[xiān]", type: "명사", meaning: "원래. 처음.", exampleZh: "你先走。", exampleKo: "너 먼저 가." },
+        { hanzi: "向", pinyin: "[xiàng]", type: "개사", meaning: "…(으)로. …에게. …을〔를〕 향하여.", exampleZh: "向左转。", exampleKo: "왼쪽으로 돌다." },
+        { hanzi: "像", pinyin: "[xiàng]", type: "동사", meaning: "같다. 비슷하다. 닮다.", exampleZh: "很像你。", exampleKo: "너를 많이 닮았다." },
+        { hanzi: "香蕉", pinyin: "[xiāngjiāo]", type: "명사", meaning: "바나나.", exampleZh: "吃香蕉。", exampleKo: "바나나를 먹다." },
+        { hanzi: "相信", pinyin: "[xiāngxìn]", type: "동사", meaning: "믿다. 신임하다. 신뢰하다.", exampleZh: "相信我。", exampleKo: "나를 믿어라." },
+        { hanzi: "小心", pinyin: "[xiǎoxīn]", type: "동사", meaning: "조심하다. 주의하다. 신중하게 하다.", exampleZh: "路上小心。", exampleKo: "길 조심해." },
+        { hanzi: "校长", pinyin: "[xiàozhǎng]", type: "명사", meaning: "학교장. [(초·중·고교의) 교장. (단과대학의) 학장. (대학의) 총장]", exampleZh: "张校长。", exampleKo: "장 교장 선생님." },
+        { hanzi: "习惯", pinyin: "[xíguàn]", type: "명사", meaning: "버릇. 습관. 습성. 풍습. 관습.", exampleZh: "好习惯。", exampleKo: "좋은 습관." },
+        { hanzi: "姓", pinyin: "[xìng]", type: "명사", meaning: "성. 성씨.", exampleZh: "你姓什么？", exampleKo: "성이 무엇입니까?" },
+        { hanzi: "新闻", pinyin: "[xīnwén]", type: "명사", meaning: "(매스컴의) 뉴스.", exampleZh: "看新闻。", exampleKo: "뉴스를 보다." },
+        { hanzi: "新鲜", pinyin: "[xīnxiān]", type: "형용사", meaning: "(야채·과일 등을 갓 따서) 신선하다. 싱싱하다.", exampleZh: "新鲜的水果。", exampleKo: "신선한 과일." },
+        { hanzi: "熊猫", pinyin: "[xióngmāo]", type: "명사", meaning: "팬더", exampleZh: "看熊猫。", exampleKo: "팬더를 보다." },
+        { hanzi: "洗手间", pinyin: "[xǐshǒujiān]", type: "명사", meaning: "화장실.", exampleZh: "去洗手间。", exampleKo: "화장실에 가다." },
+        { hanzi: "希望", pinyin: "[xīwàng]", type: "명사", meaning: "희망. 소망. 원망. 바람. 소원.", exampleZh: "我希望...", exampleKo: "나는 ~하기를 바란다." },
+        { hanzi: "洗澡", pinyin: "[xǐzǎo]", type: "동사", meaning: "목욕하다. 몸을 씻다.", exampleZh: "去洗澡。", exampleKo: "씻으러 가다." },
+        { hanzi: "需要", pinyin: "[xūyào]", type: "동사", meaning: "필요하다. 요구되다.", exampleZh: "需要帮忙吗？", exampleKo: "도움이 필요합니까?" },
+        { hanzi: "羊肉", pinyin: "[yángròu]", type: "명사", meaning: "양고기.", exampleZh: "吃羊肉。", exampleKo: "양고기를 먹다." },
+        { hanzi: "颜色", pinyin: "[yánsè]", type: "명사", meaning: "색. 색깔.", exampleZh: "什么颜色？", exampleKo: "무슨 색깔?" },
+        { hanzi: "药", pinyin: "[yào]", type: "명사", meaning: "약. 약물.", exampleZh: "吃药。", exampleKo: "약을 먹다." },
+        { hanzi: "一边", pinyin: "[yìbiān]", type: "명사", meaning: "한쪽. 한 편. 한 면.", exampleZh: "一边走一边说。", exampleKo: "걸으면서 말하다." },
+        { hanzi: "一定", pinyin: "[yídìng]", type: "부사", meaning: "반드시. 필히. 꼭.", exampleZh: "一定要去。", exampleKo: "반드시 가야 한다." },
+        { hanzi: "一共", pinyin: "[yígòng]", type: "부사", meaning: "모두. 전부. 합계.", exampleZh: "一共多少钱？", exampleKo: "다 합쳐서 얼마입니까?" },
+        { hanzi: "一会儿", pinyin: "[yíhuìr]", type: "명사", meaning: "짧은 시간. 잠깐 동안. 잠시.", exampleZh: "等一会儿。", exampleKo: "잠시 기다려라." },
+        { hanzi: "已经", pinyin: "[yǐjing]", type: "부사", meaning: "이미. 벌써.", exampleZh: "已经走了。", exampleKo: "이미 떠났다." },
+        { hanzi: "阴", pinyin: "[yīn]", type: "형용사", meaning: "흐리다. 음하다.", exampleZh: "阴天。", exampleKo: "흐린 날." },
+        { hanzi: "应该", pinyin: "[yīnggāi]", type: "능원동사", meaning: "…해야 한다. …하는 것이 마땅하다.", exampleZh: "应该去。", exampleKo: "마땅히 가야 한다." },
+        { hanzi: "银行", pinyin: "[yínháng]", type: "명사", meaning: "은행.", exampleZh: "去银行。", exampleKo: "은행에 가다." },
+        { hanzi: "饮料", pinyin: "[yǐnliào]", type: "명사", meaning: "음료.", exampleZh: "喝饮料。", exampleKo: "음료를 마시다." },
+        { hanzi: "因为", pinyin: "[yīnwèi]", type: "접속사", meaning: "왜냐하면.", exampleZh: "因为下雨...", exampleKo: "비가 오기 때문에..." },
+        { hanzi: "音乐", pinyin: "[yīnyuè]", type: "명사", meaning: "음악.", exampleZh: "听音乐。", exampleKo: "음악을 듣다." },
+        { hanzi: "以前", pinyin: "[yǐqián]", type: "명사", meaning: "과거. 이전. 예전.", exampleZh: "以前的朋友。", exampleKo: "예전 친구." },
+        { hanzi: "意思", pinyin: "[yìsi]", type: "명사", meaning: "의미. 뜻.", exampleZh: "什么意思？", exampleKo: "무슨 의미야?" },
+        { hanzi: "一下", pinyin: "[yíxià]", type: "부사", meaning: "단시간에. 갑자기.", exampleZh: "看一下。", exampleKo: "한 번 보다." },
+        { hanzi: "一样", pinyin: "[yíyàng]", type: "형용사", meaning: "같다. 동일하다. 한 가지이다.", exampleZh: "一模一样。", exampleKo: "완전히 같다." },
+        { hanzi: "一直", pinyin: "[yìzhí]", type: "부사", meaning: "계속. 줄곧. [동작 혹은 상태가 지속됨을 나타냄]", exampleZh: "一直往前走。", exampleKo: "계속 앞으로 가다." },
+        { hanzi: "又", pinyin: "[yòu]", type: "부사", meaning: "또. 다시. 거듭. [어떤 동작이나 상황이 중복되거나 계속됨을 나타냄]", exampleZh: "又来了。", exampleKo: "또 왔다." },
+        { hanzi: "有名", pinyin: "[yǒumíng]", type: "형용사", meaning: "유명하다. 명성이 높다. 이름이 널리 알려지다.", exampleZh: "很有名。", exampleKo: "매우 유명하다." },
+        { hanzi: "游戏", pinyin: "[yóuxì]", type: "명사", meaning: "게임.", exampleZh: "玩游戏。", exampleKo: "게임을 하다." },
+        { hanzi: "游泳", pinyin: "[yóuyǒng]", type: "동사", meaning: "수영하다. 헤엄치다.", exampleZh: "去游泳。", exampleKo: "수영하러 가다." },
+        { hanzi: "远", pinyin: "[yuǎn]", type: "형용사", meaning: "(공간적·시간적으로) 멀다.", exampleZh: "很远。", exampleKo: "매우 멀다." },
+        { hanzi: "运动", pinyin: "[yùndòng]", type: "명사", meaning: "(물체의) 운동.", exampleZh: "做运动。", exampleKo: "운동을 하다." },
+        { hanzi: "站", pinyin: "[zhàn]", type: "동사", meaning: "서다. 바로 서다.", exampleZh: "站起来。", exampleKo: "일어서다." },
+        { hanzi: "长", pinyin: "[zhǎng]", type: "동사", meaning: "자라다.", exampleZh: "长大了。", exampleKo: "다 자랐다." },
+        { hanzi: "张", pinyin: "[zhāng]", type: "동사", meaning: "열다. 펼치다.", exampleZh: "一张纸。", exampleKo: "종이 한 장." },
+        { hanzi: "丈夫", pinyin: "[zhàngfu]", type: "명사", meaning: "남편.", exampleZh: "她的丈夫。", exampleKo: "그녀의 남편." },
+        { hanzi: "找", pinyin: "[zhǎo]", type: "동사", meaning: "찾다. 구하다. 물색하다.", exampleZh: "找朋友。", exampleKo: "친구를 찾다." },
+        { hanzi: "照片", pinyin: "[zhàopiàn]", type: "명사", meaning: "사진.", exampleZh: "看照片。", exampleKo: "사진을 보다." },
+        { hanzi: "着", pinyin: "[zhe]", type: "조사", meaning: "…하고 있다. …하고 있는 중이다. [동사 뒤에 쓰여 동작이 지속되고 있음을 나타냄]", exampleZh: "看着。", exampleKo: "보고 있다." },
+        { hanzi: "真", pinyin: "[zhēn]", type: "부사", meaning: "확실히. 진정으로. 참으로. 진실로. 실제로.", exampleZh: "真漂亮。", exampleKo: "정말 예쁘다." },
+        { hanzi: "正在", pinyin: "[zhèngzài]", type: "부사", meaning: "지금〔한창〕 …하고 있다. [동작이나 행위가 진행 중임을 나타냄]", exampleZh: "正在开会。", exampleKo: "회의를 하고 있는 중이다." },
+        { hanzi: "只", pinyin: "[zhǐ]", type: "부사", meaning: "단지. 다만. 오직. 겨우.", exampleZh: "只有你。", exampleKo: "오직 너만 있다." },
+        { hanzi: "只", pinyin: "[zhī]", type: "양사", meaning: "마리(동물을 세는 단위)", exampleZh: "一只猫。", exampleKo: "고양이 한 마리." },
+        { hanzi: "只有", pinyin: "[zhǐyǒu]", type: "동사", meaning: "…만 있다. …밖에 없다.", exampleZh: "只有一次机会。", exampleKo: "단 한 번의 기회만 있다." },
+        { hanzi: "种", pinyin: "[zhǒng]", type: "명사", meaning: "종자. 열매. 씨(앗).", exampleZh: "一种方法。", exampleKo: "한 가지 방법." },
+        { hanzi: "中间", pinyin: "[zhōngjiān]", type: "명사", meaning: "중간.", exampleZh: "在中间。", exampleKo: "중간에 있다." },
+        { hanzi: "周末", pinyin: "[zhōumò]", type: "명사", meaning: "주말.", exampleZh: "周末快乐。", exampleKo: "주말 잘 보내세요." },
+        { hanzi: "准备", pinyin: "[zhǔnbèi]", type: "동사", meaning: "준비하다.", exampleZh: "准备考试。", exampleKo: "시험을 준비하다." },
+        { hanzi: "注意", pinyin: "[zhùyì]", type: "동사", meaning: "주의하다. 조심하다.", exampleZh: "注意安全。", exampleKo: "안전에 주의하다." },
+        { hanzi: "自行车", pinyin: "[zìxíngchē]", type: "명사", meaning: "자전거.", exampleZh: "骑自行车。", exampleKo: "자전거를 타다." },
+        { hanzi: "最", pinyin: "[zuì]", type: "부사", meaning: "가장. 제일. 아주. 매우.", exampleZh: "最好。", exampleKo: "가장 좋다." },
+        { hanzi: "嘴", pinyin: "[zuǐ]", type: "명사", meaning: "입", exampleZh: "张开嘴。", exampleKo: "입을 벌리다." },
+        { hanzi: "最后", pinyin: "[zuìhòu]", type: "형용사", meaning: "최후의. 맨 마지막의.", exampleZh: "最后一个。", exampleKo: "맨 마지막 것." },
+        { hanzi: "最近", pinyin: "[zuìjìn]", type: "명사", meaning: "최근. 요즈음. 일간.", exampleZh: "最近很忙。", exampleKo: "요즘 매우 바쁘다." },
+        { hanzi: "安全", pinyin: "[ānquán]", type: "형용사", meaning: "안전하다.", exampleZh: "注意安全。", exampleKo: "안전에 주의하다." },
+        { hanzi: "包子", pinyin: "[bāozi]", type: "명사", meaning: "(소가 든) 찐빵. 바오쯔.", exampleZh: "吃包子。", exampleKo: "빠오즈를 먹다." },
+        { hanzi: "饼干", pinyin: "[bǐnggān]", type: "명사", meaning: "비스킷. 과자.", exampleZh: "吃饼干。", exampleKo: "과자를 먹다." },
+        { hanzi: "毕业", pinyin: "[bìyè]", type: "명사/동사", meaning: "졸업(하다).", exampleZh: "大学毕业。", exampleKo: "대학을 졸업하다." },
+        { hanzi: "餐厅", pinyin: "[cāntīng]", type: "명사", meaning: "식당.", exampleZh: "去餐厅吃饭。", exampleKo: "식당에 밥 먹으러 가다." },
+        { hanzi: "厕所", pinyin: "[cèsuǒ]", type: "명사", meaning: "변소. 뒷간.", exampleZh: "去厕所。", exampleKo: "화장실에 가다." },
+        { hanzi: "长城", pinyin: "[Chángchéng]", type: "명사", meaning: "견고하고 튼튼한 힘, 혹은 넘기 어려운 장애. 장성.", exampleZh: "去长城。", exampleKo: "만리장성에 가다." },
+        { hanzi: "出生", pinyin: "[chūshēng]", type: "동사", meaning: "출생하다. 태어나다.", exampleZh: "出生在首尔。", exampleKo: "서울에서 태어났다." },
+        { hanzi: "刀", pinyin: "[dāo]", type: "명사", meaning: "칼.", exampleZh: "一把刀。", exampleKo: "칼 한 자루." },
+        { hanzi: "等", pinyin: "[děng]", type: "조사", meaning: "등. 따위. [열거한 후에 그 대상들을 한정함을 나타냄]", exampleZh: "苹果、香蕉等。", exampleKo: "사과, 바나나 등." },
+        { hanzi: "低", pinyin: "[dī]", type: "형용사", meaning: "(높이가) 낮다.", exampleZh: "很低。", exampleKo: "매우 낮다." },
+        { hanzi: "对话", pinyin: "[duìhuà]", type: "동사", meaning: "대화하다.", exampleZh: "听对话。", exampleKo: "대화를 듣다." },
+        { hanzi: "对面", pinyin: "[duìmiàn]", type: "명사", meaning: "(～儿) 맞은편. 건너편. 반대편.", exampleZh: "在对面。", exampleKo: "맞은편에 있다." },
+        { hanzi: "肚子", pinyin: "[dùzi]", type: "명사", meaning: "(사람이나 동물의) 복부.", exampleZh: "肚子疼。", exampleKo: "배가 아프다." },
+        { hanzi: "儿童", pinyin: "[értóng]", type: "명사", meaning: "아동. 어린이.", exampleZh: "儿童节。", exampleKo: "어린이날." },
+        { hanzi: "方法", pinyin: "[fāngfǎ]", type: "명사", meaning: "방법. 수단. 방식.", exampleZh: "好方法。", exampleKo: "좋은 방법." },
+        { hanzi: "方向", pinyin: "[fāngxiàng]", type: "명사", meaning: "방향.", exampleZh: "换方向。", exampleKo: "방향을 바꾸다." },
+        { hanzi: "父亲", pinyin: "[fùqīn]", type: "명사", meaning: "부친. 아버지.", exampleZh: "我的父亲。", exampleKo: "나의 부친." },
+        { hanzi: "干杯", pinyin: "[gānbēi]", type: "동사", meaning: "건배하다. 잔을 비우다. 축배를 들다.", exampleZh: "大家干杯！", exampleKo: "모두 건배!" },
+        { hanzi: "感谢", pinyin: "[gǎnxiè]", type: "동사", meaning: "고맙다. 감사하다. 고맙게 여기다.", exampleZh: "非常感谢。", exampleKo: "매우 감사합니다." },
+        { hanzi: "各", pinyin: "[gè]", type: "대명사", meaning: "각. 여러. 갖가지. 여러 가지. [일정 범위 내의 모든 개체를 가리킴]", exampleZh: "各种各样。", exampleKo: "각양각색." },
+        { hanzi: "公里", pinyin: "[gōnglǐ]", type: "명사", meaning: "킬로미터(km).", exampleZh: "十公里。", exampleKo: "10킬로미터." },
+        { hanzi: "果汁", pinyin: "[guǒzhī]", type: "명사", meaning: "과일즙.", exampleZh: "喝果汁。", exampleKo: "과일즙을 마시다." },
+        { hanzi: "号码", pinyin: "[hàomǎ]", type: "명사", meaning: "번호. 숫자.", exampleZh: "电话号码。", exampleKo: "전화번호." },
+        { hanzi: "火", pinyin: "[huǒ]", type: "명사", meaning: "(～儿) 불. 화염.", exampleZh: "着火了。", exampleKo: "불이 났다." },
+        { hanzi: "交通", pinyin: "[jiāotōng]", type: "명사", meaning: "교통.", exampleZh: "交通很方便。", exampleKo: "교통이 편리하다." },
+        { hanzi: "饺子", pinyin: "[jiǎozi]", type: "명사", meaning: "만두. 교자.", exampleZh: "吃饺子。", exampleKo: "만두를 먹다." },
+        { hanzi: "开心", pinyin: "[kāixīn]", type: "형용사", meaning: "기쁘다. 즐겁다. 좋다. 유쾌하다.", exampleZh: "很开心。", exampleKo: "매우 기쁘다." },
+        { hanzi: "可是", pinyin: "[kěshì]", type: "접속사", meaning: "그러나. 하지만. 그렇지만.", exampleZh: "可是太贵了。", exampleKo: "하지만 너무 비싸다." },
+        { hanzi: "空", pinyin: "[kōng]", type: "형용사", meaning: "(속이) 비다. 텅 비다.", exampleZh: "空瓶子。", exampleKo: "빈 병." },
+        { hanzi: "礼拜天", pinyin: "[lǐbàitiān]", type: "명사", meaning: "일요일.", exampleZh: "这个礼拜天。", exampleKo: "이번 주 일요일." },
+        { hanzi: "旅行", pinyin: "[lǚxíng]", type: "동사", meaning: "여행하다.", exampleZh: "去旅行。", exampleKo: "여행을 가다." },
+        { hanzi: "满", pinyin: "[mǎn]", type: "형용사", meaning: "가득〔꽉〕 차다. 가득하다. 그득하다.", exampleZh: "人满了。", exampleKo: "사람이 꽉 찼다." },
+        { hanzi: "毛巾", pinyin: "[máojīn]", type: "명사", meaning: "수건. 타월.", exampleZh: "用毛巾。", exampleKo: "수건을 사용하다." },
+        { hanzi: "美丽", pinyin: "[měilì]", type: "형용사", meaning: "아름답다. 예쁘다. 곱다.", exampleZh: "美丽的风景。", exampleKo: "아름다운 풍경." },
+        { hanzi: "梦", pinyin: "[mèng]", type: "명사", meaning: "꿈.", exampleZh: "做梦。", exampleKo: "꿈을 꾸다." },
+        { hanzi: "秒", pinyin: "[miǎo]", type: "양사", meaning: "초. [시간 계량 단위로, 60초를 1분(分)이라 함]", exampleZh: "十秒。", exampleKo: "10초." },
+        { hanzi: "母亲", pinyin: "[mǔqīn]", type: "명사", meaning: "(자신을 낳아 준) 모친. 엄마. 어머니.", exampleZh: "我的母亲。", exampleKo: "나의 모친." },
+        { hanzi: "内", pinyin: "[nèi]", type: "명사", meaning: "안. 안쪽. 속. 내부", exampleZh: "在两天内。", exampleKo: "이틀 안에." },
+        { hanzi: "乒乓球", pinyin: "[pīngpāngqiú]", type: "명사", meaning: "탁구.", exampleZh: "打乒乓球。", exampleKo: "탁구를 하다." },
+        { hanzi: "普通话", pinyin: "[pǔtōnghuà]", type: "명사", meaning: "현대 중국 표준어.", exampleZh: "说普通话。", exampleKo: "표준어를 말하다." },
+        { hanzi: "桥", pinyin: "[qiáo]", type: "명사", meaning: "다리. 교량.", exampleZh: "过桥。", exampleKo: "다리를 건너다." },
+        { hanzi: "巧克力", pinyin: "[qiǎokèlì]", type: "명사", meaning: "초콜릿(chocolate).", exampleZh: "吃巧克力。", exampleKo: "초콜릿을 먹다." },
+        { hanzi: "轻", pinyin: "[qīng]", type: "형용사", meaning: "(무게가) 가볍다.", exampleZh: "很轻。", exampleKo: "매우 가볍다." },
+        { hanzi: "日记", pinyin: "[rìjì]", type: "명사", meaning: "일기. 일지.", exampleZh: "写日记。", exampleKo: "일기를 쓰다." },
+        { hanzi: "散步", pinyin: "[sànbù]", type: "동사", meaning: "산보하다.", exampleZh: "去散步。", exampleKo: "산책하러 가다." },
+        { hanzi: "沙发", pinyin: "[shāfā]", type: "명사", meaning: "소파(sofa).", exampleZh: "坐沙发。", exampleKo: "소파에 앉다." },
+        { hanzi: "生活", pinyin: "[shēnghuó]", type: "명사", meaning: "생활.", exampleZh: "生活很好。", exampleKo: "생활이 좋다." },
+        { hanzi: "帅", pinyin: "[shuài]", type: "형용사", meaning: "잘생기다. 멋지다. 영준하다. 스마트하다.", exampleZh: "他很帅。", exampleKo: "그는 잘생겼다." },
+        { hanzi: "死", pinyin: "[sǐ]", type: "동사", meaning: "(생물이) 죽다. 생명을 잃다.", exampleZh: "小鸟死了。", exampleKo: "새가 죽었다." },
+        { hanzi: "停", pinyin: "[tíng]", type: "동사", meaning: "정지하다. 멎다. 서다. 멈추다. 중지하다.", exampleZh: "停车。", exampleKo: "차를 세우다." },
+        { hanzi: "卫生间", pinyin: "[wèishēngjiān]", type: "명사", meaning: "화장실. 세면장.", exampleZh: "去卫生间。", exampleKo: "화장실에 가다." },
+        { hanzi: "香", pinyin: "[xiāng]", type: "형용사", meaning: "향기롭다.", exampleZh: "很香。", exampleKo: "매우 향기롭다." },
+        { hanzi: "行", pinyin: "[xíng]", type: "동사", meaning: "좋다. …해도 좋다.", exampleZh: "这样行吗？", exampleKo: "이렇게 해도 되나요?" },
+        { hanzi: "呀", pinyin: "[ya]", type: "조사", meaning: "어조사 ‘啊(·a)’가 앞 음절의 모음의 영향을 받아 변화된 형태", exampleZh: "好呀！", exampleKo: "좋아!" },
+        { hanzi: "阳光", pinyin: "[yángguāng]", type: "명사", meaning: "양광. 햇빛. 태양의 빛〔광선〕.", exampleZh: "阳光很好。", exampleKo: "햇빛이 좋다." },
+        { hanzi: "眼镜", pinyin: "[yǎnjìng]", type: "명사", meaning: "안경.", exampleZh: "戴眼镜。", exampleKo: "안경을 쓰다." },
+        { hanzi: "邮局", pinyin: "[yóujú]", type: "명사", meaning: "우체국.", exampleZh: "去邮局。", exampleKo: "우체국에 가다." },
+        { hanzi: "云", pinyin: "[yún]", type: "명사", meaning: "구름.", exampleZh: "白云。", exampleKo: "흰 구름." },
+        { hanzi: "咱们", pinyin: "[zánmen]", type: "대명사", meaning: "우리(들).", exampleZh: "咱们走吧。", exampleKo: "우리 가자." },
+        { hanzi: "最好", pinyin: "[zuìhǎo]", type: "형용사", meaning: "가장〔제일〕 좋다.", exampleZh: "这是最好的。", exampleKo: "이것이 가장 좋다." },
+        { hanzi: "座", pinyin: "[zuò]", type: "명사", meaning: "좌석, 자리", exampleZh: "一座山。", exampleKo: "산 하나(좌)." },
+        { hanzi: "座位", pinyin: "[zuòwèi]", type: "명사", meaning: "좌석. [주로 공공 장소에 쓰임]", exampleZh: "找座位。", exampleKo: "자리를 찾다." }
+    ];
+
+    // 실패 단어 저장을 위한 Set
+    let failSet = new Set();
+
+    // 배열 섞기 함수
+    function shuffleArray(array) {
+        let arr = [...array];
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+    }
+
+    function switchMode(mode) {
+        document.getElementById('tab1').classList.remove('active');
+        document.getElementById('tab2').classList.remove('active');
+        document.getElementById('mode1').classList.remove('active');
+        document.getElementById('mode2').classList.remove('active');
+
+        document.getElementById('tab' + mode).classList.add('active');
+        document.getElementById('mode' + mode).classList.add('active');
+        
+        if(mode === 2 && mcqDeck.length === 0) {
+            initMcq();
+        }
+    }
+
+    let chineseVoice = null;
+
+    function loadVoices() {
+        const voices = window.speechSynthesis.getVoices();
+        chineseVoice = voices.find(voice => 
+            voice.lang.includes('zh') && 
+            (voice.name.includes('Google') || voice.name.includes('Microsoft') || voice.name.includes('Yaoxiao') || voice.name.includes('Huihui') || voice.name.includes('Ting-Ting'))
+        );
+        if (!chineseVoice) {
+            chineseVoice = voices.find(voice => voice.lang.includes('zh'));
+        }
+    }
+
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+        loadVoices(); 
+    }
+
+    function playAudio(event) {
+        event.stopPropagation();
+        
+        const textToRead = cardDeck[cardIndex].hanzi;
+
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(textToRead);
+            utterance.lang = 'zh-CN';
+            if (chineseVoice) utterance.voice = chineseVoice;
+            utterance.rate = 0.85;
+            window.speechSynthesis.speak(utterance);
+        } else {
+            alert("현재 사용 중인 브라우저는 음성 읽기 기능(TTS)을 지원하지 않습니다.");
+        }
+    }
+
+    /* 실패 상태 체크 이벤트 */
+    function toggleFailStatus(event) {
+        const word = cardDeck[cardIndex];
+        if (event.target.checked) {
+            failSet.add(word.hanzi);
+        } else {
+            failSet.delete(word.hanzi);
+        }
+    }
+
+    /* 플래시 카드 로직 */
+    let cardDeck = [...rawData];
+    let cardIndex = 0;
+    let isPinyinVisible = false; // 기본 시작은 병음 가림 상태로 통일
+
+    function renderCard() {
+        const word = cardDeck[cardIndex];
+        
+        document.getElementById('cardHanzi').innerText = word.hanzi;
+        document.getElementById('cardProgress').innerText = `${cardIndex + 1} / ${cardDeck.length}`;
+        
+        const pinyinEl = document.getElementById('cardPinyin');
+        pinyinEl.innerText = word.pinyin;
+        pinyinEl.style.visibility = isPinyinVisible ? 'visible' : 'hidden';
+        
+        document.getElementById('cardType').innerText = word.type;
+        document.getElementById('cardMeaning').innerText = word.meaning;
+        document.getElementById('cardExampleZh').innerText = word.exampleZh;
+        document.getElementById('cardExampleKo').innerText = word.exampleKo;
+        
+        // 현재 단어의 실패(fail) 상태를 체크박스에 동기화
+        document.getElementById('failCheck').checked = failSet.has(word.hanzi);
+        
+        document.getElementById('flashcard').classList.remove('flipped');
+    }
+
+    function togglePinyin() {
+        isPinyinVisible = !isPinyinVisible;
+        const pinyinEl = document.getElementById('cardPinyin');
+        const btn = document.getElementById('togglePinyinBtn');
+
+        if (isPinyinVisible) {
+            pinyinEl.style.visibility = 'visible';
+            btn.innerText = '병음 끄기 👁️';
+            btn.classList.remove('off');
+        } else {
+            pinyinEl.style.visibility = 'hidden';
+            btn.innerText = '병음 켜기 🙈';
+            btn.classList.add('off');
+        }
+    }
+
+    // 다음/이전, 카드 전환시 무조건 병음 가리기
+    function hidePinyin() {
+        isPinyinVisible = false;
+        const btn = document.getElementById('togglePinyinBtn');
+        if (btn) {
+            btn.innerText = '병음 켜기 🙈';
+            btn.classList.add('off');
+        }
+    }
+
+    function toggleCard() {
+        document.getElementById('flashcard').classList.toggle('flipped');
+    }
+
+    function nextCard() {
+        if(window.speechSynthesis) window.speechSynthesis.cancel();
+        
+        hidePinyin(); // 다음 카드로 넘길 때 병음 무조건 숨기기
+
+        if (cardIndex < cardDeck.length - 1) {
+            cardIndex++;
+            renderCard();
+        } else {
+            alert('마지막 카드입니다. 카드를 섞어 처음부터 다시 시작합니다.');
+            cardDeck = shuffleArray(cardDeck); 
+            cardIndex = 0;
+            renderCard();
+        }
+    }
+
+    function prevCard() {
+        if(window.speechSynthesis) window.speechSynthesis.cancel();
+        
+        hidePinyin(); // 이전 카드로 넘길 때도 병음 무조건 숨기기
+
+        if (cardIndex > 0) {
+            cardIndex--;
+            renderCard();
+        }
+    }
+
+    // 실패한 단어만 보기 함수
+    function playFailOnly() {
+        if(window.speechSynthesis) window.speechSynthesis.cancel();
+        
+        const failList = rawData.filter(w => failSet.has(w.hanzi));
+        if (failList.length === 0) {
+            alert('실패(❌)로 체크된 단어가 없습니다.\n카드 뒷면에서 단어를 체크해 주세요.');
+            return;
+        }
+        
+        hidePinyin(); // 모드 전환 시 병음 숨기기
+        
+        cardDeck = shuffleArray(failList);
+        cardIndex = 0;
+        renderCard();
+        
+        // MCQ 객관식 퀴즈 덱도 실패한 단어들로 구성
+        mcqDeck = shuffleArray(failList);
+        mcqIndex = 0;
+        score = 0;
+        updateMcqUI();
+        if(document.getElementById('mode2').classList.contains('active')) {
+            loadMcqQuestion();
+        }
+        
+        alert(`실패 리스트에 있는 ${failList.length}개의 단어만 모아서 퀴즈를 시작합니다.`);
+    }
+
+    // 전체 섞기 함수 (초기 상태로 복구)
+    function shuffleCards() {
+        if(window.speechSynthesis) window.speechSynthesis.cancel();
+        
+        hidePinyin(); // 덱 섞을 때 병음 숨기기
+
+        cardDeck = shuffleArray(rawData); 
+        cardIndex = 0;
+        renderCard();
+
+        mcqDeck = shuffleArray(rawData);
+        mcqIndex = 0;
+        score = 0;
+        updateMcqUI();
+        if(document.getElementById('mode2').classList.contains('active')) {
+            loadMcqQuestion();
+        }
+        
+        alert(`전체 ${rawData.length}개 단어로 덱을 다시 섞었습니다.`);
+    }
+
+    renderCard();
+
+    /* 객관식 퀴즈 로직 */
+    let mcqDeck = [];
+    let mcqIndex = 0;
+    let score = 0;
+    let answered = false;
+
+    function initMcq() {
+        mcqDeck = shuffleArray(rawData);
+        mcqIndex = 0;
+        score = 0;
+        updateMcqUI();
+        loadMcqQuestion();
+    }
+
+    function loadMcqQuestion() {
+        if (mcqIndex >= mcqDeck.length) {
+            document.getElementById('mcqMeaningText').innerHTML = "🎉 모든 퀴즈 완료!";
+            document.getElementById('mcqType').style.display = 'none';
+            document.getElementById('mcqOptions').innerHTML = "";
+            document.getElementById('mcqFeedback').innerHTML = `총 <b>${mcqDeck.length}</b>문제 중 <b>${score}</b>문제를 맞히셨습니다.`;
+            document.getElementById('mcqNextBtn').style.display = 'none';
+            return;
+        }
+
+        answered = false;
+        document.getElementById('mcqNextBtn').style.display = 'none';
+        document.getElementById('mcqFeedback').innerHTML = "";
+        
+        const currentQ = mcqDeck[mcqIndex];
+        document.getElementById('mcqType').innerText = currentQ.type;
+        document.getElementById('mcqType').style.display = 'inline-block';
+        document.getElementById('mcqMeaningText').innerText = currentQ.meaning;
+
+        // 보기 추출: 전체 rawData에서 오답을 가져와서 선택지의 다양성을 유지함
+        let distractors = rawData.filter(w => w.hanzi !== currentQ.hanzi);
+        distractors = shuffleArray(distractors).slice(0, 3);
+        
+        let options = [currentQ, ...distractors];
+        options = shuffleArray(options);
+
+        const optionsContainer = document.getElementById('mcqOptions');
+        optionsContainer.innerHTML = "";
+
+        options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = 'mcq-btn';
+            btn.innerText = opt.hanzi;
+            btn.onclick = () => checkAnswer(btn, opt.hanzi, currentQ.hanzi);
+            optionsContainer.appendChild(btn);
+        });
+
+        updateMcqUI();
+    }
+
+    function checkAnswer(clickedBtn, selectedHanzi, correctHanzi) {
+        if (answered) return;
+        answered = true;
+
+        const allBtns = document.querySelectorAll('.mcq-btn');
+        const feedback = document.getElementById('mcqFeedback');
+
+        if (selectedHanzi === correctHanzi) {
+            clickedBtn.classList.add('correct');
+            feedback.innerHTML = "✅ 정답입니다!";
+            feedback.style.color = "#27ae60";
+            score++;
+        } else {
+            clickedBtn.classList.add('wrong');
+            feedback.innerHTML = `❌ 오답입니다. 정답은 <b>[ ${correctHanzi} ]</b> 입니다.`;
+            feedback.style.color = "#e74c3c";
+            
+            allBtns.forEach(b => {
+                if(b.innerText === correctHanzi) b.classList.add('correct');
+            });
+        }
+
+        updateMcqUI();
+        document.getElementById('mcqNextBtn').style.display = 'block';
+    }
+
+    function loadNextMcq() {
+        mcqIndex++;
+        loadMcqQuestion();
+    }
+
+    function updateMcqUI() {
+        if(mcqIndex < mcqDeck.length) {
+            document.getElementById('mcqProgress').innerText = `문제: ${mcqIndex + 1} / ${mcqDeck.length}`;
+        }
+        document.getElementById('mcqScore').innerText = `점수: ${score} 점`;
+    }
+
+</script>
+</body>
+</html>
