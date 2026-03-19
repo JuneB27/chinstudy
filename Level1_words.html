@@ -32,7 +32,7 @@
         .quiz-section.active { display: block; }
 
         /* 카드 스타일 */
-        .card-container { perspective: 1000px; width: 100%; max-width: 450px; height: 320px; margin: 20px auto; }
+        .card-container { perspective: 1000px; width: 100%; max-width: 450px; height: 350px; margin: 20px auto; }
         .flip-card { position: relative; width: 100%; height: 100%; text-align: center; transition: transform 0.6s; transform-style: preserve-3d; cursor: pointer; }
         .card-container.flipped .flip-card { transform: rotateY(180deg); }
         .card-front, .card-back {
@@ -59,15 +59,49 @@
         .example-zh { font-size: 1.15em; font-weight: bold; margin-bottom: 5px; color: #fff; }
         .example-ko { font-size: 0.95em; color: #e8f4f8; }
 
+        /* 실패 체크박스 스타일 */
+        .fail-container {
+            margin-top: 15px;
+            background-color: rgba(231, 76, 60, 0.8);
+            padding: 8px 15px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .fail-container label {
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        .fail-container input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
         .card-controls { display: flex; justify-content: space-between; align-items: center; max-width: 450px; margin: 0 auto 20px auto; }
         .nav-btn { padding: 10px 20px; font-size: 1em; background-color: #2c3e50; color: white; border: none; border-radius: 5px; cursor: pointer; }
         .nav-btn:hover { background-color: #1a252f; }
         .card-progress { font-weight: bold; color: #7f8c8d; }
 
-        .action-btns { display: flex; justify-content: center; gap: 15px; margin-top: 20px; }
-        .action-btn { padding: 10px 20px; border-radius: 8px; border: none; font-size: 1em; font-weight: bold; cursor: pointer; transition: background-color 0.2s; }
+        /* 하단 컨트롤 버튼 영역 */
+        .action-btns { 
+            display: flex; 
+            flex-wrap: wrap;
+            justify-content: center; 
+            gap: 10px; 
+            margin-top: 20px; 
+            max-width: 500px;
+            margin-left: auto; margin-right: auto;
+        }
+        .action-btn { padding: 10px 15px; border-radius: 8px; border: none; font-size: 1em; font-weight: bold; cursor: pointer; transition: background-color 0.2s; }
         .btn-shuffle { background-color: #9b59b6; color: white; }
         .btn-shuffle:hover { background-color: #8e44ad; }
+        .btn-fail-mode { background-color: #e74c3c; color: white; }
+        .btn-fail-mode:hover { background-color: #c0392b; }
         .btn-pinyin { background-color: #e67e22; color: white; }
         .btn-pinyin:hover { background-color: #d35400; }
         .btn-pinyin.off { background-color: #95a5a6; }
@@ -86,6 +120,43 @@
         .btn-next-mcq:hover { background-color: #2ecc71; }
         
         .mcq-stats { display: flex; justify-content: space-between; margin-bottom: 20px; font-weight: bold; color: #7f8c8d; }
+
+        /* 하단 링크 버튼 영역 스타일 */
+        .link-section {
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            margin-top: 30px;
+            text-align: center;
+        }
+        .link-section h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.2em;
+        }
+        .link-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+        }
+        .link-btn {
+            display: inline-block;
+            padding: 12px 20px;
+            background-color: #34495e;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: all 0.3s;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+        }
+        .link-btn:hover {
+            background-color: #f39c12;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.15);
+        }
     </style>
 </head>
 <body>
@@ -123,13 +194,19 @@
                         <div class="example-zh" id="cardExampleZh"></div>
                         <div class="example-ko" id="cardExampleKo"></div>
                     </div>
+                    <!-- 실패 체크 박스 영역 (이벤트 전파 방지로 카드 뒤집힘 방지) -->
+                    <div class="fail-container" onclick="event.stopPropagation()">
+                        <input type="checkbox" id="failCheck" onchange="toggleFailStatus(event)">
+                        <label for="failCheck">❌ 실패 (복습 리스트 추가)</label>
+                    </div>
                 </div>
             </div>
         </div>
         
         <div class="action-btns">
-            <button class="action-btn btn-pinyin" id="togglePinyinBtn" onclick="togglePinyin()">병음 끄기 👁️</button>
-            <button class="action-btn btn-shuffle" onclick="shuffleCards()">🔀 카드 섞기</button>
+            <button class="action-btn btn-pinyin off" id="togglePinyinBtn" onclick="togglePinyin()">병음 켜기 🙈</button>
+            <button class="action-btn btn-fail-mode" onclick="playFailOnly()">🚨 실패한 단어만</button>
+            <button class="action-btn btn-shuffle" onclick="shuffleCards()">🔀 카드 섞기(전체)</button>
         </div>
     </div>
 
@@ -151,6 +228,23 @@
 
         <div id="mcqFeedback"></div>
         <button class="btn-next-mcq" id="mcqNextBtn" onclick="loadNextMcq()">다음 문제 ▶</button>
+    </div>
+
+    <!-- 하단 가상 링크 버튼 영역 (10개) -->
+    <div class="link-section">
+        <h3>🔗 관련 정보 및 추가 학습 이동</h3>
+        <div class="link-grid">
+            <a href="https://example.com/page1" target="_blank" class="link-btn">텍스트 1</a>
+            <a href="https://example.com/page2" target="_blank" class="link-btn">텍스트 2</a>
+            <a href="https://example.com/page3" target="_blank" class="link-btn">텍스트 3</a>
+            <a href="https://example.com/page4" target="_blank" class="link-btn">텍스트 4</a>
+            <a href="https://example.com/page5" target="_blank" class="link-btn">텍스트 5</a>
+            <a href="https://example.com/page6" target="_blank" class="link-btn">텍스트 6</a>
+            <a href="https://example.com/page7" target="_blank" class="link-btn">텍스트 7</a>
+            <a href="https://example.com/page8" target="_blank" class="link-btn">텍스트 8</a>
+            <a href="https://example.com/page9" target="_blank" class="link-btn">텍스트 9</a>
+            <a href="https://example.com/page10" target="_blank" class="link-btn">텍스트 10</a>
+        </div>
     </div>
 
 <script>
@@ -333,14 +427,14 @@
         { hanzi: "想", pinyin: "[xiǎng]", type: "동사", meaning: "생각하다.", exampleZh: "我想去。", exampleKo: "나는 가고 싶다." },
         { hanzi: "先生", pinyin: "[xiānsheng]", type: "명사", meaning: "선생님. 씨. [성인 남성에 대한 경칭]", exampleZh: "张先生。", exampleKo: "장 선생님(장씨)." },
         { hanzi: "现在", pinyin: "[xiànzài]", type: "명사", meaning: "지금. 현재. 이제.", exampleZh: "现在去。", exampleKo: "지금 가다." },
-        { hanzi: "笑", pinyin: "[xiào]", type: "동사", meaning: "웃다. 웃음을 짓다.", exampleZh: "开心地笑。", exampleKo: "즐겁게 웃다." },
+        { hanzi: "笑", pinyin: "[xiào]", type: "동사", meaning: "웃다. 웃음을 짓다.", exampleZh: "开心笑。", exampleKo: "즐겁게 웃다." },
         { hanzi: "小", pinyin: "[xiǎo]", type: "형용사", meaning: "(부피·면적·나이·수량·규모·역량·정도 등이) 작다. 적다. 약하다. 어리다.", exampleZh: "很小。", exampleKo: "매우 작다." },
         { hanzi: "小姐", pinyin: "[xiǎojiě]", type: "명사", meaning: "아씨. 아가씨. [하인이 주인집의 시집 가지 않은 딸을 부르던 말]", exampleZh: "王小姐。", exampleKo: "왕 아가씨." },
         { hanzi: "小时", pinyin: "[xiǎoshí]", type: "명사", meaning: "시간. [시간 단위]", exampleZh: "一小时。", exampleKo: "한 시간." },
         { hanzi: "下午", pinyin: "[xiàwǔ]", type: "명사", meaning: "오후. [정오부터 해가 질 때 까지의 동안]", exampleZh: "今天下午。", exampleKo: "오늘 오후." },
         { hanzi: "下雨", pinyin: "[xiàyǔ]", type: "동사", meaning: "비가 오다〔내리다〕.", exampleZh: "下雨了。", exampleKo: "비가 온다." },
-        { hanzi: "写", pinyin: "[xiě]", type: "동사", meaning: "글씨를 쓰다.", exampleZh: "写字。", exampleKo: "글씨를 쓰다." },
-        { hanzi: "些", pinyin: "[xiē]", type: "양사", meaning: "조금. 약간. 몇. [명사 앞에 쓰여 확정적이지 않은 적은 수량을 나타냄]", exampleZh: "这些。", exampleKo: "이것들." },
+        { hanzi: "写", pinyin: "[xiě]", type: "동사", meaning: "글씨를 쓰다.", exampleZh: "写字。", exampleKo: "글자를 쓰다." },
+        { hanzi: "些", pinyin: "[xiē]", type: "양사", meaning: "단어조금. 약간. 몇. [명사 앞에 쓰여 확정적이지 않은 적은 수량을 나타냄]", exampleZh: "这些。", exampleKo: "이것들." },
         { hanzi: "谢谢", pinyin: "[xièxie]", type: "동사", meaning: "감사합니다. 고맙습니다.", exampleZh: "谢谢你。", exampleKo: "고마워." },
         { hanzi: "西瓜", pinyin: "[xīguā]", type: "명사", meaning: "수박.", exampleZh: "吃西瓜。", exampleKo: "수박을 먹다." },
         { hanzi: "喜欢", pinyin: "[xǐhuan]", type: "동사", meaning: "좋아하다. 호감을 가지다. 흥미를 느끼다. 마음에 들다. 애호하다. 사랑하다.", exampleZh: "喜欢你。", exampleKo: "너를 좋아해." },
@@ -391,6 +485,9 @@
         { hanzi: "昨天", pinyin: "[zuótiān]", type: "명사", meaning: "어제.", exampleZh: "昨天晚上。", exampleKo: "어제 저녁." },
         { hanzi: "作业", pinyin: "[zuòyè]", type: "명사", meaning: "숙제. 과제.", exampleZh: "写作业。", exampleKo: "숙제를 하다." }
     ];
+
+    // 실패 단어 저장을 위한 Set
+    let failSet = new Set();
 
     // 배열 섞기 함수
     function shuffleArray(array) {
@@ -451,10 +548,20 @@
         }
     }
 
+    /* 실패 상태 체크 이벤트 */
+    function toggleFailStatus(event) {
+        const word = cardDeck[cardIndex];
+        if (event.target.checked) {
+            failSet.add(word.hanzi);
+        } else {
+            failSet.delete(word.hanzi);
+        }
+    }
+
     /* 플래시 카드 로직 */
     let cardDeck = [...rawData];
     let cardIndex = 0;
-    let isPinyinVisible = true; 
+    let isPinyinVisible = false; // 기본 시작은 병음 가림 상태로 통일
 
     function renderCard() {
         const word = cardDeck[cardIndex];
@@ -470,6 +577,9 @@
         document.getElementById('cardMeaning').innerText = word.meaning;
         document.getElementById('cardExampleZh').innerText = word.exampleZh;
         document.getElementById('cardExampleKo').innerText = word.exampleKo;
+        
+        // 현재 단어의 실패(fail) 상태를 체크박스에 동기화
+        document.getElementById('failCheck').checked = failSet.has(word.hanzi);
         
         document.getElementById('flashcard').classList.remove('flipped');
     }
@@ -490,36 +600,94 @@
         }
     }
 
+    // 다음/이전, 카드 전환시 무조건 병음 가리기
+    function hidePinyin() {
+        isPinyinVisible = false;
+        const btn = document.getElementById('togglePinyinBtn');
+        if (btn) {
+            btn.innerText = '병음 켜기 🙈';
+            btn.classList.add('off');
+        }
+    }
+
     function toggleCard() {
         document.getElementById('flashcard').classList.toggle('flipped');
     }
 
     function nextCard() {
         if(window.speechSynthesis) window.speechSynthesis.cancel();
+        
+        hidePinyin(); // 다음 카드로 넘길 때 병음 무조건 숨기기
 
         if (cardIndex < cardDeck.length - 1) {
             cardIndex++;
             renderCard();
         } else {
             alert('마지막 카드입니다. 카드를 섞어 처음부터 다시 시작합니다.');
-            shuffleCards();
+            cardDeck = shuffleArray(cardDeck); 
+            cardIndex = 0;
+            renderCard();
         }
     }
 
     function prevCard() {
         if(window.speechSynthesis) window.speechSynthesis.cancel();
         
+        hidePinyin(); // 이전 카드로 넘길 때도 병음 무조건 숨기기
+
         if (cardIndex > 0) {
             cardIndex--;
             renderCard();
         }
     }
 
-    function shuffleCards() {
+    // 실패한 단어만 보기 함수
+    function playFailOnly() {
         if(window.speechSynthesis) window.speechSynthesis.cancel();
-        cardDeck = shuffleArray(rawData);
+        
+        const failList = rawData.filter(w => failSet.has(w.hanzi));
+        if (failList.length === 0) {
+            alert('실패(❌)로 체크된 단어가 없습니다.\n카드 뒷면에서 단어를 체크해 주세요.');
+            return;
+        }
+        
+        hidePinyin(); // 모드 전환 시 병음 숨기기
+        
+        cardDeck = shuffleArray(failList);
         cardIndex = 0;
         renderCard();
+        
+        // MCQ 객관식 퀴즈 덱도 실패한 단어들로 구성
+        mcqDeck = shuffleArray(failList);
+        mcqIndex = 0;
+        score = 0;
+        updateMcqUI();
+        if(document.getElementById('mode2').classList.contains('active')) {
+            loadMcqQuestion();
+        }
+        
+        alert(`실패 리스트에 있는 ${failList.length}개의 단어만 모아서 퀴즈를 시작합니다.`);
+    }
+
+    // 전체 섞기 함수 (초기 상태로 복구)
+    function shuffleCards() {
+        if(window.speechSynthesis) window.speechSynthesis.cancel();
+        
+        hidePinyin(); // 덱 섞을 때 병음 숨기기
+
+        cardDeck = shuffleArray(rawData); 
+        cardIndex = 0;
+        renderCard();
+
+        mcqDeck = shuffleArray(rawData);
+        mcqIndex = 0;
+        score = 0;
+        updateMcqUI();
+        if(document.getElementById('mode2').classList.contains('active')) {
+            loadMcqQuestion();
+        }
+        
+        alert('전체 234개 단어로 덱을 다시 섞었습니다.');
     }
 
     renderCard();
@@ -557,6 +725,7 @@
         document.getElementById('mcqType').style.display = 'inline-block';
         document.getElementById('mcqMeaningText').innerText = currentQ.meaning;
 
+        // 보기 추출: 전체 rawData(234개)에서 오답을 가져와서 선택지의 다양성을 유지함
         let distractors = rawData.filter(w => w.hanzi !== currentQ.hanzi);
         distractors = shuffleArray(distractors).slice(0, 3);
         
