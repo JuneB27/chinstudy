@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HSK 4급 [난이도 2] 단어 마스터 퀴즈</title>
+    <style>
+        body {
+            font-family: 'Malgun Gothic', '맑은 고딕', sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+        h1 { color: #2c3e50; margin-bottom: 10px; }
+        .subtitle { color: #7f8c8d; margin-bottom: 30px; }
+        
+        .tab-container { display: flex; justify-content: center; gap: 15px; margin-bottom: 30px; }
+        .tab-btn {
+            padding: 12px 25px; font-size: 1.1em; font-weight: bold; border: none;
+            border-radius: 8px; cursor: pointer; background-color: #e0e6ed;
+            color: #555; transition: all 0.3s ease;
+        }
+        .tab-btn.active { background-color: #2980b9; color: white; box-shadow: 0 4px 6px rgba(41, 128, 185, 0.3); }
+        
+        .quiz-section {
+            display: none; background: #ffffff; padding: 30px; border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05); min-height: 400px;
+        }
+        .quiz-section.active { display: block; }
+
+        /* 카드 스타일 */
+        .card-container { perspective: 1000px; width: 100%; max-width: 450px; height: 380px; margin: 20px auto; }
+        .flip-card { position: relative; width: 100%; height: 100%; text-align: center; transition: transform 0.6s; transform-style: preserve-3d; cursor: pointer; }
+        .card-container.flipped .flip-card { transform: rotateY(180deg); }
+        .card-front, .card-back {
+            position: absolute; width: 100%; height: 100%; backface-visibility: hidden;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); padding: 20px; box-sizing: border-box;
+        }
+        .card-front { background-color: #fff; border: 2px solid #2980b9; }
+        .card-back { background-color: #2980b9; color: white; transform: rotateY(180deg); }
+        .hanzi { font-size: 4.5em; font-weight: bold; margin-bottom: 10px; color: #2c3e50; }
+        .pinyin { font-size: 1.6em; color: #7f8c8d; transition: opacity 0.3s; margin-bottom: 15px; }
+        
+        .btn-speak {
+            background-color: #f39c12; color: white; border: none; padding: 8px 20px;
+            border-radius: 20px; font-size: 1.1em; font-weight: bold; cursor: pointer;
+            transition: background 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .btn-speak:hover { background-color: #e67e22; }
+
+        .type-badge { background-color: #f1c40f; color: #333; padding: 4px 12px; border-radius: 20px; font-size: 0.9em; font-weight: bold; margin-bottom: 15px; }
+        .meaning { font-size: 1.3em; font-weight:bold; line-height: 1.4; word-break: keep-all; margin-bottom: 15px; }
+        
+        .memory-box { background-color: rgba(255, 255, 255, 0.2); padding: 12px; border-radius: 8px; width: 90%; font-size: 0.95em; line-height: 1.4; color: #ecf0f1; }
+        .memory-title { font-weight: bold; color: #ffeaa7; margin-bottom: 5px; font-size: 1.05em; }
+
+        .fail-container {
+            margin-top: 15px; background-color: rgba(231, 76, 60, 0.9); padding: 8px 15px;
+            border-radius: 8px; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .fail-container label { color: #fff; font-weight: bold; cursor: pointer; font-size: 1em; }
+        .fail-container input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+
+        .card-controls { display: flex; justify-content: space-between; align-items: center; max-width: 450px; margin: 0 auto 20px auto; }
+        .nav-btn { padding: 10px 20px; font-size: 1em; background-color: #2c3e50; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        .nav-btn:hover { background-color: #1a252f; }
+        .card-progress { font-weight: bold; color: #7f8c8d; }
+
+        .action-btns { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 20px; }
+        .action-btn { padding: 10px 15px; border-radius: 8px; border: none; font-size: 1em; font-weight: bold; cursor: pointer; }
+        .btn-shuffle { background-color: #9b59b6; color: white; }
+        .btn-fail-mode { background-color: #e74c3c; color: white; }
+        .btn-pinyin { background-color: #16a085; color: white; }
+
+        .mcq-question { font-size: 1.3em; font-weight: bold; margin-bottom: 25px; color: #2c3e50; background-color: #f8f9fa; padding: 20px; border-radius: 8px; }
+        .mcq-type { display: inline-block; background-color: #2980b9; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.7em; margin-bottom: 15px; }
+        .mcq-options { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+        .mcq-btn { background-color: #fff; border: 2px solid #bdc3c7; padding: 20px; border-radius: 10px; font-size: 2.2em; font-weight: bold; cursor: pointer; transition: all 0.2s; color: #34495e; }
+        .mcq-btn:hover { border-color: #2980b9; background-color: #ebf5fb; }
+        .mcq-btn.correct { background-color: #2ecc71; color: white; border-color: #27ae60; }
+        .mcq-btn.wrong { background-color: #e74c3c; color: white; border-color: #c0392b; }
+        
+        #mcqFeedback { font-size: 1.1em; font-weight: bold; min-height: 30px; margin-bottom: 15px; }
+        
+        .feedback-memory {
+            margin-top: 15px; padding: 15px; background-color: #fff3cd; color: #856404;
+            border-left: 5px solid #ffeeba; border-radius: 5px; text-align: left;
+            font-size: 1em; line-height: 1.5; display: none; 
+        }
+
+        .btn-next-mcq { display: none; margin: 0 auto; padding: 12px 30px; background-color: #27ae60; color: white; border: none; border-radius: 5px; font-size: 1.1em; font-weight: bold; cursor: pointer; }
+        .mcq-stats { display: flex; justify-content: space-between; margin-bottom: 20px; font-weight: bold; color: #7f8c8d; }
+    </style>
+</head>
+<body>
+
+    <h1>🇨🇳 HSK 4급 [난이도 2] 단어 퀴즈</h1>
+    <p class="subtitle">뜻 유추 카드 및 암기법이 포함된 4지선다형 객관식 퀴즈</p>
+
+    <div class="tab-container">
+        <button class="tab-btn active" id="tab1" onclick="switchMode(1)">🃏 카드 뜻 맞추기</button>
+        <button class="tab-btn" id="tab2" onclick="switchMode(2)">📝 4지선다 한자 맞추기</button>
+    </div>
+
+    <!-- 모드 1: 카드 퀴즈 -->
+    <div id="mode1" class="quiz-section active">
+        <p>💡 <b>학습 방법:</b> 카드를 클릭하면 뒷면에서 <b>뜻과 암기법</b>을 확인할 수 있습니다.</p>
+        
+        <div class="card-controls">
+            <button class="nav-btn" onclick="prevCard()">◀ 이전</button>
+            <div class="card-progress" id="cardProgress">1 / 329</div>
+            <button class="nav-btn" onclick="nextCard()">다음 ▶</button>
+        </div>
+
+        <div class="card-container" id="flashcard" onclick="toggleCard()">
+            <div class="flip-card">
+                <div class="card-front">
+                    <div class="hanzi" id="cardHanzi"></div>
+                    <div class="pinyin" id="cardPinyin"></div>
+                    <button class="btn-speak" onclick="playAudio(event)">🔊 발음 듣기</button>
+                </div>
+                <div class="card-back">
+                    <div class="type-badge" id="cardType"></div>
+                    <div class="meaning" id="cardMeaning"></div>
+                    <div class="memory-box">
+                        <div class="memory-title">💡 암기법</div>
+                        <div id="cardMemory"></div>
+                    </div>
+                    <div class="fail-container" onclick="event.stopPropagation()">
+                        <input type="checkbox" id="failCheck" onchange="toggleFailStatus(event)">
+                        <label for="failCheck">❌ 실패 (복습 리스트 추가)</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="action-btns">
+            <button class="action-btn btn-pinyin" id="togglePinyinBtn" onclick="togglePinyin()">병음 켜기 🙈</button>
+            <button class="action-btn btn-fail-mode" onclick="playFailOnly()">🚨 실패한 단어만</button>
+            <button class="action-btn btn-shuffle" onclick="shuffleCards()">🔀 카드 섞기</button>
+        </div>
+    </div>
+
+    <!-- 모드 2: 4지선다 퀴즈 -->
+    <div id="mode2" class="quiz-section">
+        <p>💡 <b>학습 방법:</b> 주어진 뜻을 보고 알맞은 한자를 선택하세요. 틀리면 암기법이 제공됩니다!</p>
+        
+        <div class="mcq-stats">
+            <span id="mcqProgress">문제: 1 / 329</span>
+            <span id="mcqScore" style="color:#d35400;">점수: 0 점</span>
+        </div>
+
+        <div class="mcq-question">
+            <span class="mcq-type" id="mcqType"></span><br>
+            <span id="mcqMeaningText"></span>
+        </div>
+
+        <div class="mcq-options" id="mcqOptions"></div>
+
+        <div id="mcqFeedback"></div>
+        <div class="feedback-memory" id="mcqFeedbackMemory"></div>
+        
+        <button class="btn-next-mcq" id="mcqNextBtn" onclick="loadNextMcq()">다음 문제 ▶</button>
+    </div>
+
+<script>
+    // =========================================================================
+    // ⚠️ 아래 빈 공간에 이전에 드렸던 329개짜리 rawData 배열 코드를 붙여넣으세요!
+    // =========================================================================
+const rawData = [
+  { hanzi: "把", pinyin: "[bǎ]", type: "개사", meaning: "…으로. …을〔를〕 가지고.", memory: "[한자 뜻: 扌(손수), 巴(꼬리 파) / 잡을 파] 손(扌)으로 파(巴)를 꽉 잡고 목적어 '~을 가지고' 무언가를 한다고 연상하세요." },
+  { hanzi: "搬", pinyin: "[bān]", type: "동사", meaning: "(비교적 크거나 무거운 것을) 옮기다. 운반하다.", memory: "[한자 뜻: 扌(손수), 般(일반 반) / 옮길 반] 손(扌)으로 일반적(般)인 크고 무거운 짐을 '옮기고 운반한다'고 기억하세요." },
+  { hanzi: "办法", pinyin: "[bànfǎ]", type: "명사", meaning: "방법. 수단. 방식, 조치, 방책 술책.", memory: "[한자 뜻: 办(힘쓸 판), 法(법법)] 힘써서(办) 문제를 해결하는 법(法)이 곧 '방법, 조치'입니다." },
+  { hanzi: "包", pinyin: "[bāo]", type: "동사", meaning: "(종이나 베 혹은 기타 얇은 것으로) 싸다. 싸매다.", memory: "[한자 뜻: 勹(쌀포), 己(몸기) / 쌀포] 어머니가 태아를 감싸고 있는 모양(勹)을 본뜬 글자로, 종이나 천으로 물건을 '싸매다'로 연상하세요." },
+  { hanzi: "被", pinyin: "[bèi]", type: "동사", meaning: "덮다.", memory: "[한자 뜻: 衤(옷의), 皮(가죽 피) / 이불 피] 옷(衤)이나 가죽(皮)을 덮어서 이불처럼 몸을 '덮다'라고 외우세요." },
+  { hanzi: "变化", pinyin: "[biànhuà]", type: "동사", meaning: "변화하다. 달라지다.", memory: "[한자 뜻: 变(변할 변), 化(될 화)] 모양이나 상태가 변해서(变) 다른 것으로 되어가는(化) '변화'를 뜻합니다." },
+  { hanzi: "比较", pinyin: "[bǐjiào]", type: "동사", meaning: "비교하다.", memory: "[한자 뜻: 比(견줄 비), 较(견줄 교)] 두 사람이 나란히 서서 견주는 모습(比)과 수레(车)가 사귀어(交) 지나가며 크기를 견주는 모습(较)으로 '비교하다'를 연상하세요." },
+  { hanzi: "笔记本", pinyin: "[bǐjìběn]", type: "명사", meaning: "노트 수첩, 비망록.", memory: "[한자 뜻: 笔(붓 필), 记(기록할 기), 本(근본 본/책 본)] 붓이나 펜(笔)으로 기록을(记) 남기는 책(本)인 '노트, 수첩'입니다." },
+  { hanzi: "宾馆", pinyin: "[bīnguǎn]", type: "명사", meaning: "(규모가 비교적 큰) 호텔.", memory: "[한자 뜻: 宾(손빈), 馆(집관)] 손님(宾)이 머무르며 식사(食)를 할 수 있는 집(馆)이 바로 '호텔'입니다." },
+  { hanzi: "冰箱", pinyin: "[bīngxiāng]", type: "명사", meaning: "냉장고", memory: "[한자 뜻: 冰(얼음빙), 箱(상자 상)] 얼음(冰)이 가득 들어있는 서늘한 상자(箱)인 '냉장고'를 연상하세요." },
+  { hanzi: "比赛", pinyin: "[bǐsài]", type: "명사", meaning: "경기 시합.", memory: "[한자 뜻: 比(견줄 비), 赛(경기할 새)] 서로의 실력을 견주며(比) 승부를 가리기 위해 경기(赛)를 하는 '시합'입니다." },
+  { hanzi: "不但", pinyin: "[búdàn]", type: "접속사", meaning: "...뿐만 아니라.", memory: "[한자 뜻: 不(아닐 부), 但(다만 단)] 단지(但) 그것만은 아니(不)라는 뜻으로, '~뿐만 아니라'라고 해석합니다." },
+  { hanzi: "才", pinyin: "[cái]", type: "부사", meaning: "겨우. 비로소", memory: "[한자 뜻: 才(바야흐로 재)] 새싹이 땅을 뚫고 '겨우, 비로소' 솟아나는 모양을 본뜬 글자로 기억하세요." },
+  { hanzi: "参加", pinyin: "[cānjiā]", type: "동사", meaning: "(어떤 조직이나 활동에) 참가하다. 가입하다. 참여하다. 참석하다.", memory: "[한자 뜻: 参(참여할 참), 加(더할 가)] 어떤 모임에 자신의 몸을 더해(加) 함께 참여하는(参) '참가하다'라는 뜻입니다." },
+  { hanzi: "差", pinyin: "[chà]", type: "형용사", meaning: "나쁘다. 표준에 못 미치다. 좋지 않다.", memory: "[한자 뜻: 差(어긋날 차)] 벼(禾)의 길이가 들쭉날쭉 어긋나 있듯, 기준에 '못 미쳐서 나쁘다'라고 연상하세요." },
+  { hanzi: "成绩", pinyin: "[chéngjì]", type: "명사", meaning: "(일·학업상의) 성적 성과, 수확,", memory: "[한자 뜻: 成(이룰 성), 绩(길쌈 적/공적 적)] 실(糸)을 짜서 이룩한(成) 공적(绩)처럼, 학업이나 일에서 거둔 '성적'을 의미합니다." },
+  { hanzi: "城市", pinyin: "[chéngshì]", type: "명사", meaning: "도시.", memory: "[한자 뜻: 城(성성), 市(저자 시)] 흙(土)으로 쌓은 성(城)벽 안에 상업이 발달한 시장(市)이 있는 번화한 '도시'입니다." },
+  { hanzi: "衬衫", pinyin: "[chènshān]", type: "명사", meaning: "와이셔츠, 셔츠, 블라우스,", memory: "[한자 뜻: 衬(속옷 친), 衫(적삼 삼)] 옷(衤) 안에 받쳐 입는 속옷(衬)이나 가벼운 윗옷(衫)인 '셔츠'를 뜻합니다." },
+  { hanzi: "除了", pinyin: "[chúle]", type: "개사", meaning: "..을[를] 제외하고(는).", memory: "[한자 뜻: 除(덜제), 了(마칠료)] 언덕(阝)에서 여분(余)의 흙을 덜어내듯(除) 특정한 것을 '제외한다'고 외우세요." },
+  { hanzi: "聪明", pinyin: "[cōngming]", type: "형용사", meaning: "똑똑하다. 총명하다. 영리하다. 영민하다.", memory: "[한자 뜻: 聪(귀밝을 총), 明(밝을 명)] 귀(耳)가 밝아(聪) 남의 말을 잘 알아듣고 사리에 밝은(明) '똑똑한' 사람을 나타냅니다." },
+  { hanzi: "带", pinyin: "[dài]", type: "명사/동사", meaning: "(명사) 띠. 벨트, 끈 (동사) 챙기다. 지니다", memory: "[한자 뜻: 带(띠 대)] 수건이나 천이 길게 늘어져 있는 '띠'의 모양이며, 띠를 몸에 두르듯 물건을 '챙기고 지닌다'라고 연상하세요." },
+  { hanzi: "担心", pinyin: "[dānxīn]", type: "동사", meaning: "염려하다. 걱정하다.", memory: "[한자 뜻: 担(메다 담), 心(마음 심)] 손(扌)으로 무거운 짐을 메듯(担) 마음(心) 속에 짐을 지고 있어 '걱정하는' 상태입니다." },
+  { hanzi: "打扫", pinyin: "[dǎsǎo]", type: "동사", meaning: "청소하다. 소제하다. 깨끗이 정리[처리] 하다.", memory: "[한자 뜻: 打(칠타), 扫(쓸소)] 손(扌)으로 빗자루를 잡고 먼지를 치고(打) 쓸어내는(扫) '청소'의 모습을 떠올리세요." },
+  { hanzi: "打算", pinyin: "[dǎsuàn]", type: "동사", meaning: "....할 생각이다[작정이다]....하려고 하다. 계획하다. 고려하다.", memory: "[한자 뜻: 打(칠타), 算(셈할 산)] 머릿속으로 주판 대나무(竹) 알을 툭툭 치며(打) 셈(算)을 하여 일을 '계획하다'라고 외우세요." },
+  { hanzi: "地", pinyin: "[de]", type: "조사", meaning: "상황어(부사어)로 동사/형용사를 수식할 경우에 쓰임", memory: "[한자 뜻: 地(땅지)] 땅(土)이 모든 것을 받쳐주듯, 동사 앞에서 부사어를 만들어 수식해주는 문법적 '받침대' 역할을 한다고 기억하세요." },
+  { hanzi: "得", pinyin: "[de]", type: "조사", meaning: "동사 뒤에 쓰여 가능을 나타냄.", memory: "[한자 뜻: 得(얻을 득)] 걸어가서(彳) 무언가를 손에 얻는(得) 결과처럼, 동사 뒤에 붙어 동작의 결과나 '가능성'을 얻었음을 나타냅니다." },
+  { hanzi: "段", pinyin: "[duàn]", type: "양사", meaning: "단락, 토막. [사물의 한 부분을 나타냄]", memory: "[한자 뜻: 段(조각 단)] 무언가를 두드려(殳) 길게 이어진 것을 잘라낸 '한 토막'이나 '단락'을 뜻합니다." },
+  { hanzi: "锻炼", pinyin: "[duànliàn]", type: "동사", meaning: "단조하다. 제련하다. (단련하다)", memory: "[한자 뜻: 锻(쇠불릴 단), 炼(불릴 련)] 쇠(钅)를 두드리고 불(火)에 달구어 단단하게(炼) 만들듯, 몸과 마음을 '단련한다'고 연상하세요." },
+  { hanzi: "而且", pinyin: "[érqiě]", type: "접속사", meaning: "게다가. 뿐만 아니라, 또한.", memory: "[한자 뜻: 而(말이을 이), 且(또 차)] 앞의 말에 이어주면서(而) 또(且) 다른 내용을 덧붙여 '게다가'라고 해석합니다." },
+  { hanzi: "发烧", pinyin: "[fāshāo]", type: "동사", meaning: "열이 나다.", memory: "[한자 뜻: 发(필 발), 烧(불사를 소)] 몸 안에서 불꽃(烧)이 피어나듯(发) 뜨거워져서 '열이 나는' 현상입니다." },
+  { hanzi: "发现", pinyin: "[fāxiàn]", type: "동사", meaning: "발견하다. 알아차리다.", memory: "[한자 뜻: 发(필발), 现(나타날 현)] 구슬(王)처럼 숨겨진 귀한 것이 밖으로 피어나(发) 나타나게(现) 되어 '발견하다'라고 외우세요." },
+  { hanzi: "复习", pinyin: "[fùxí]", type: "동사", meaning: "복습하다.", memory: "[한자 뜻: 复(회복할 복/다시 부), 习(익힐습)] 날개(羽)를 펄럭이며 반복해서 배운 것을 다시(复) 익히는(习) '복습'의 과정입니다." },
+  { hanzi: "刚才", pinyin: "[gāngcái]", type: "명사", meaning: "지금 막. 방금. 막. 이제 금방. 방금 전.", memory: "[한자 뜻: 刚(굳을/방금 강), 才(바야흐로 재)] 칼(刂)로 막 잘라낸 듯이 갓(刚) 비로소(才) 일어난 일, 즉 '지금 막'을 뜻합니다." },
+  { hanzi: "感冒", pinyin: "[gǎnmào]", type: "명사", meaning: "감기.", memory: "[한자 뜻: 感(느낄 감), 冒(무릅쓸모)] 나쁜 찬 기운을 무릅쓰고(冒) 몸이 병을 느낀(感) 상태가 바로 '감기'입니다." },
+  { hanzi: "感兴趣", pinyin: "[gǎnxìngqù]", type: "동사", meaning: "관심이 있다. 흥미가 있다. 좋아하다", memory: "[한자 뜻: 感(느낄 감), 兴(일/흥흥), 趣(뜻 취)] 재밌는 뜻(趣)이 일어나고(走) 그것을 마음에 느끼는(感) 것이 '흥미를 갖는 것'입니다." },
+  { hanzi: "根据", pinyin: "[gēnjù]", type: "개사", meaning: "....에 의거하여. [동작 행위의 근거를 이끌어들임]", memory: "[한자 뜻: 根(뿌리 근), 据(의거할 거)] 나무(木)의 흔들리지 않는 뿌리(根)처럼 단단히 의거하여(据) 어떤 일을 한다는 의미입니다." },
+  { hanzi: "关系", pinyin: "[guānxi]", type: "명사", meaning: "(사람과 사람 또는 사물 사이의) 관계, 연줄.", memory: "[한자 뜻: 关(빗장관), 系(맬계)] 빗장(关)으로 문을 걸어 잠그고 실(糸)로 단단히 매어(系) 놓은 것처럼 끈끈한 '관계'입니다." },
+  { hanzi: "关心", pinyin: "[guānxīn]", type: "동사", meaning: "(사람 또는 사물에 대해) 관심을 갖다. 관심을 기울이다.", memory: "[한자 뜻: 关(빗장관), 心(마음 심)] 마음(心)의 빗장(关)을 닫고 한 곳에 집중해 마음을 가두어 두는 것이 '관심을 갖는 것'입니다." },
+  { hanzi: "关于", pinyin: "[guānyú]", type: "개사", meaning: "...에 관해서 [관하여].", memory: "[한자 뜻: 关(빗장관), 于(어조사 우)] 문빗장(关)처럼 어떤 핵심적인 대상에 묶여 이어지는(于) 주제, '~에 관하여'라고 외우세요." },
+  { hanzi: "黄河", pinyin: "[Huánghé]", type: "명사", meaning: "황허(黄河).", memory: "[한자 뜻: 黄(누를 황), 河(물하)] 누런(黄) 흙탕물(氵)이 흐르는 거대한 강(河)인 중국의 '황허'입니다." },
+  { hanzi: "环境", pinyin: "[huánjìng]", type: "명사", meaning: "환경.", memory: "[한자 뜻: 环(고리 환), 境(지경 경)] 구슬(王) 고리(环)처럼 내 주변의 땅(土)과 구역(境)을 둘러싸고 있는 모든 것, '환경'입니다." },
+  { hanzi: "会议", pinyin: "[huìyì]", type: "명사", meaning: "회의. [여럿이 모여 의논함, 또는 그런 모임]", memory: "[한자 뜻: 会(모일 회), 议(의논할의)] 사람들이 한곳에 모여서(会) 말(讠)로 의논하는(议) 자리가 바로 '회의'입니다." },
+  { hanzi: "或者", pinyin: "[huòzhě]", type: "부사", meaning: "아마. 어쩌면. 혹시(...인지 모른다).", memory: "[한자 뜻: 或(혹시 혹), 者(놈 자)] 어쩌면 그럴지도 모른다는 의문이나 혹시(或)나 하는 마음을 담은 사람(者)의 말투, '아마'라고 기억하세요." },
+  { hanzi: "护照", pinyin: "[hùzhào]", type: "명사", meaning: "여권.", memory: "[한자 뜻: 护(보호할 호), 照(비출조)] 손(扌)으로 내 신분을 보호(护)하고 사진으로 내 얼굴을 비춰주는(照) 증명서, 즉 '여권'입니다." },
+  { hanzi: "极", pinyin: "[jí]", type: "명사", meaning: "정점. 절정. 최고점. 꼭대기. 끝.", memory: "[한자 뜻: 极(다할극)] 나무(木)를 타고 가장 높은 꼭대기까지 다다른(及) 상태, 즉 '절정이나 끝'을 의미합니다." },
+  { hanzi: "检查", pinyin: "[jiǎnchá]", type: "동사", meaning: "검사하다. 점검하다. 조사하다.", memory: "[한자 뜻: 检(검사할 검), 查(조사할 사)] 나무(木) 상자를 열어 모인 것들을 하나하나 살피고(检) 자세히 조사한다(查)고 외우세요." },
+  { hanzi: "角", pinyin: "[jiǎo]", type: "명사", meaning: "(짐승의) 뿔.", memory: "[한자 뜻: 角(뿔각)] 짐승의 머리에 뾰족하게 솟아난 '뿔' 모양과 빗살무늬를 그대로 본뜬 상형문자입니다." },
+  { hanzi: "街道", pinyin: "[jiēdào]", type: "명사", meaning: "거리. 가두. 길거리, 가로 대로, 큰길.", memory: "[한자 뜻: 街(거리가), 道(길도)] 사람들이 걸어 다니는(彳) 사거리(街)와 이어지는 도로(道)가 모인 넓은 '거리'입니다." },
+  { hanzi: "解决", pinyin: "[jiějué]", type: "동사", meaning: "해결하다. 풀다.", memory: "[한자 뜻: 解(풀해), 决(결단할 결)] 소(牛)의 뿔(角)을 칼(刀)로 해체하여 풀고(解), 얼음(冫)이 깨지듯 시원하게 결단(決) 내려 '해결하다'라고 연상하세요." },
+  { hanzi: "节目", pinyin: "[jiémù]", type: "명사", meaning: "프로그램(program), 프로, 종목, 항목.", memory: "[한자 뜻: 节(마디 절), 目(눈목)] 대나무(竹) 마디(节)처럼 끊어져 나뉘어 있어, 눈(目)으로 각각 골라볼 수 있는 방송 '프로그램'입니다." },
+  { hanzi: "节日", pinyin: "[jiérì]", type: "명사", meaning: "(국경일 따위의 법정) 기념일, 경축일.", memory: "[한자 뜻: 节(마디 절), 日(날 일)] 한 해의 시간 중 특별한 마디(节)가 되는 날(日)인 '명절, 기념일'을 의미합니다." },
+  { hanzi: "结束", pinyin: "[jiéshù]", type: "동사", meaning: "끝나다. 마치다. 종결하다. 종료하다. 마무리하다.", memory: "[한자 뜻: 结(맺을 결), 束(묶을 속)] 실을 맺고(结) 다발을 단단히 묶어(束) 일을 완전히 '마무리하고 끝내다'라고 연상하세요." },
+  { hanzi: "几乎", pinyin: "[jīhū]", type: "부사", meaning: "거의. 거의 모두. 거진 다.", memory: "[한자 뜻: 几(몇기), 乎(어조사 호)] 차이가 몇(几) 안 되어 '거의' 다다랐음을 뜻합니다." },
+  { hanzi: "季节", pinyin: "[jìjié]", type: "명사", meaning: "계절. 철. 절기.", memory: "[한자 뜻: 季(계절 계), 节(마디 절)] 벼(禾)의 생장 주기에 따른 계절(季)의 마디(节), 즉 봄/여름/가을/겨울의 '계절'입니다." },
+  { hanzi: "经过", pinyin: "[jīngguò]", type: "동사", meaning: "경유하다. 통과하다. 지나다. 거치다.", memory: "[한자 뜻: 经(지날 경), 过(지날과)] 실(糸)이 베틀을 지나가듯(经) 길을 걸어서 지나가고(过) '거쳐가는' 모습입니다." },
+  { hanzi: "经理", pinyin: "[jīnglǐ]", type: "명사", meaning: "(기업의) 경영 관리 책임자. 지배인, 사장. 매니저(manager).", memory: "[한자 뜻: 经(지날/다스릴 경), 理(다스릴 리)] 회사의 업무를 다스리고(经) 이치에 맞게 관리하는(理) '사장, 매니저'입니다." },
+  { hanzi: "就", pinyin: "[jiù]", type: "부사", meaning: "곧. 즉시, 바로, 당장. [장차 아주 짧은 시간 내에 이루어짐을 나타냄]", memory: "[한자 뜻: 就(나아갈 취)] 목적지를 향해 곧장 나아가는 모양으로, 시간이 지체 없이 '곧, 즉시' 일어남을 뜻합니다." },
+  { hanzi: "决定", pinyin: "[juédìng]", type: "동사", meaning: "결정[결심·결의 의결]하다.", memory: "[한자 뜻: 决(결단할 결), 定(정할 정)] 마음속으로 확실하게 결단하여(決) 흔들리지 않게 정하는(定) '결정'입니다." },
+  { hanzi: "刻", pinyin: "[kè]", type: "동사", meaning: "새기다. 조각하다.", memory: "[한자 뜻: 刻(새길 각)] 칼(刂)을 사용하여 나무나 돌에 글자나 모양을 '새기고 조각한다'고 연상하세요." },
+  { hanzi: "空调", pinyin: "[kōngtiáo]", type: "동사", meaning: "(에어컨으로) 공기를 조절하다. (명사: 에어컨)", memory: "[한자 뜻: 空(빌 공), 调(고를 조)] 실내의 빈 공기(空)의 온도와 습도를 알맞게 조절해주는(调) 기계, '에어컨'입니다." },
+  { hanzi: "筷子", pinyin: "[kuàizi]", type: "명사", meaning: "젓가락.", memory: "[한자 뜻: 筷(젓가락 쾌), 子(명사 접미사)] 대나무(竹)로 만들어 음식을 빠르고(快) 쉽게 집어먹게 해주는 도구인 '젓가락'입니다." },
+  { hanzi: "了解", pinyin: "[liǎojiě]", type: "동사", meaning: "자세하게 알다. 이해하다.", memory: "[한자 뜻: 了(마칠/밝을 료), 解(풀해)] 얽힌 문제를 분명하게(了) 풀어서(解) 속사정까지 '자세히 알고 이해하다'라는 뜻입니다." },
+  { hanzi: "聊天", pinyin: "[liáotiān]", type: "동사", meaning: "잡담하다. 이야기하다. 수다떨다", memory: "[한자 뜻: 聊(귀울 명/료), 天(하늘천)] 하늘(天) 아래 모여 앉아 귀(耳)를 기울이며 이런저런 가벼운 '수다를 떨다'라고 기억하세요." },
+  { hanzi: "离开", pinyin: "[líkāi]", type: "동사", meaning: "떠나다. 벗어나다. 헤어지다.", memory: "[한자 뜻: 离(떠날 리), 开(열개)] 머물던 곳에서 떨어져 나와(离) 밖으로 '떠나는' 모습입니다." },
+  { hanzi: "邻居", pinyin: "[línjū]", type: "명사", meaning: "이웃집. 이웃 사람.", memory: "[한자 뜻: 邻(이웃린), 居(살거)] 고을(阝) 가까이에 함께 모여 사는(居) '이웃'입니다." },
+  { hanzi: "历史", pinyin: "[lìshǐ]", type: "명사", meaning: "역사.", memory: "[한자 뜻: 历(지낼력), 史(역사 사)] 과거부터 지나온(历) 시간 동안 사관(史)이 기록한 사실, 즉 '역사'입니다." },
+  { hanzi: "留学", pinyin: "[liúxué]", type: "동사", meaning: "유학하다.", memory: "[한자 뜻: 留(머무를 류), 学(배울 학)] 타국에 머무르면서(留) 학문을 배우는(学) '유학' 생활입니다." },
+  { hanzi: "满意", pinyin: "[mǎnyì]", type: "형용사", meaning: "만족하다. 만족스럽다. 흡족하다.", memory: "[한자 뜻: 满(찰만), 意(뜻의)] 물(氵)이 가득 차오르듯(满) 내 뜻과 마음(意)이 꽉 차서 '만족스럽다'고 연상하세요." },
+  { hanzi: "难过", pinyin: "[nánguò]", type: "형용사", meaning: "고통스럽다. 괴롭다. 슬프다. 견디기 어렵다.", memory: "[한자 뜻: 难(어려울 난), 过(지날과)] 힘든 고비를 지나가기(过) 너무 어려워서(难) 마음이 '슬프고 괴로운' 상태입니다." },
+  { hanzi: "盘子", pinyin: "[pánzi]", type: "명사", meaning: "쟁반.", memory: "[한자 뜻: 盘(소반 반), 子(명사 접미사)] 그릇(皿) 위에 음식을 넓게 담아 나르는 둥근 모양의 '쟁반'입니다." },
+  { hanzi: "起飞", pinyin: "[qǐfēi]", type: "동사", meaning: "(비행기 로켓 등이) 이륙하다.", memory: "[한자 뜻: 起(일어날 기), 飞(날 비)] 비행기가 땅에서 위로 일어나서(起) 하늘로 날아가는(飞) '이륙' 장면을 떠올리세요." },
+  { hanzi: "奇怪", pinyin: "[qíguài]", type: "형용사", meaning: "기이하다. 이상하다. 괴이하다.", memory: "[한자 뜻: 奇(기이할 기), 怪(괴이할 괴)] 평범하지 않고 기이하며(奇) 마음에 괴상하게(怪) 느껴지는 '이상한' 일입니다." },
+  { hanzi: "清楚", pinyin: "[qīngchu]", type: "형용사", meaning: "분명하다. 조리있다. 알기 쉽다. 명백하다. 뚜렷하다.", memory: "[한자 뜻: 清(맑을 청), 楚(분명할 초)] 물(氵)이 맑아(清) 바닥이 다 보일 정도로 '분명하고 뚜렷하다'라고 외우세요." },
+  { hanzi: "请假", pinyin: "[qǐngjià]", type: "동사", meaning: "(휴가·조퇴·외출·결근·결석 등의 허락을) 신청하다.", memory: "[한자 뜻: 请(청할 청), 假(휴가 가)] 말씀(讠)으로 윗사람에게 쉬는 날(假)을 청하여(请) '휴가를 내다'라는 의미입니다." },
+  { hanzi: "其实", pinyin: "[qíshí]", type: "부사", meaning: "기실, 사실.", memory: "[한자 뜻: 其(그 기), 实(실제 실)] 겉보기와 달리 그(其) 실제(实) 내용은 이러하다며 '사실은' 하고 말할 때 씁니다." },
+  { hanzi: "其他", pinyin: "[qítā]", type: "대명사", meaning: "(사람·사물에 쓰여) 기타. 다른 사람[사물].", memory: "[한자 뜻: 其(그기), 他(다를 타)] 그(其) 밖에 있는 다른(他) 사람이나 사물인 '기타' 등등을 나타냅니다." },
+  { hanzi: "然后", pinyin: "[ránhòu]", type: "접속사", meaning: "그런 후에, 연후에. 그 다음에.", memory: "[한자 뜻: 然(그러할 연), 后(뒤 후)] 일이 그렇게(然) 된 뒤(后)에 다음 동작을 한다는 뜻으로 '그런 다음에'라고 연상하세요." },
+  { hanzi: "认为", pinyin: "[rènwéi]", type: "동사", meaning: "여기다. 생각하다. 보다. 인정하다.", memory: "[한자 뜻: 认(알인), 为(할/될 위)] 어떤 사실을 스스로 인식하여(认) 그렇다고 삼는(为) 주관적인 '생각, 견해'입니다." },
+  { hanzi: "认真", pinyin: "[rènzhēn]", type: "형용사", meaning: "진지하다. 착실하다. 진솔하다.", memory: "[한자 뜻: 认(알인), 真(참진)] 참되고(真) 올바르게 상황을 인식하여(认) 대충 하지 않고 '진지하게' 임하는 태도입니다." },
+  { hanzi: "热情", pinyin: "[rèqíng]", type: "형용사", meaning: "열정적이다. 친절하다. 다정하다.", memory: "[한자 뜻: 热(더울 열), 情(뜻정)] 뜨거운(热) 마음과 정(情)으로 사람이나 일을 대하는 '열정적이고 친절한' 모습입니다." },
+  { hanzi: "如果", pinyin: "[rúguǒ]", type: "접속사", meaning: "만약, 만일.", memory: "[한자 뜻: 如(같을 여), 果(과연과)] 일의 결과(果)가 내 생각과 같이(如) 된다면 어떨까 가정하는 '만약'입니다." },
+  { hanzi: "声音", pinyin: "[shēngyīn]", type: "명사", meaning: "소리 목소리.", memory: "[한자 뜻: 声(소리 성), 音(소리 음)] 사람의 입이나 물체에서 나오는 성대(声)의 음향(音), 즉 '소리, 목소리'입니다." },
+  { hanzi: "世界", pinyin: "[shìjiè]", type: "명사", meaning: "세계. [지구상의 모든 곳]", memory: "[한자 뜻: 世(인간 세), 界(지경계)] 세상(世) 사람들이 모여 사는 모든 경계(界)를 통틀어 이르는 '세계'입니다." },
+  { hanzi: "瘦", pinyin: "[shòu]", type: "형용사", meaning: "마르다. 여위다.", memory: "[한자 뜻: 瘦(파리할 수)] 몸에 병(疒)이 들어 살이 빠진 것처럼 홀쭉하게 '마르고 여윈' 상태를 뜻합니다." },
+  { hanzi: "提高", pinyin: "[tígāo]", type: "동사", meaning: "(위치·수준·질·수량 등을) 제고하다. 향상시키다. 높이다. 끌어올리다.", memory: "[한자 뜻: 提(끌제), 高(높을 고)] 손(扌)으로 수준이나 실력을 위로 끌어당겨(提) 높게(高) '향상시킨다'고 기억하세요." },
+  { hanzi: "突然", pinyin: "[tūrán]", type: "부사", meaning: "갑자기. 문득. 난데없이, 느닷없이, 불쑥. 돌연히. 홀연히.", memory: "[한자 뜻: 突(갑자기 돌), 然(그러할 연)] 구멍(穴)에서 개(犬)가 불쑥 튀어나오듯, 아주 갑작스럽게(突) 그러한(然) 상황을 뜻합니다." },
+  { hanzi: "行李箱", pinyin: "[xínglixiāng]", type: "명사", meaning: "트렁크, 화물칸, 여행용 가방.", memory: "[한자 뜻: 行(다닐 행), 李(짐리), 箱(상자 상)] 길을 갈(行) 때 짐(李)을 담는 큰 상자(箱)인 '여행용 캐리어'를 연상하세요." },
+  { hanzi: "信用卡", pinyin: "[xìnyòngkǎ]", type: "명사", meaning: "신용 카드, 크레디트 카드(credit card).", memory: "[한자 뜻: 信(믿을 신), 用(쓸 용), 卡(카드 카)] 그 사람의 믿음(信)과 쓰임새(用)를 바탕으로 발급받아 사용하는 카드(卡), '신용 카드'입니다." },
+  { hanzi: "选择", pinyin: "[xuǎnzé]", type: "동사", meaning: "고르다. 선택하다.", memory: "[한자 뜻: 选(가릴 선), 择(가릴 택)] 걸어가면서(辶) 여러 개 중에서 좋은 것을 가려내고(选) 뽑는(择) '선택'입니다." },
+  { hanzi: "要求", pinyin: "[yāoqiú]", type: "동사", meaning: "요구하다. 요망하다.", memory: "[한자 뜻: 要(구할 요), 求(구할 구)] 필요한 것을 중요하게(要) 구하여(求) 달라고 '요구하다'라고 외우세요." },
+  { hanzi: "一般", pinyin: "[yìbān]", type: "형용사", meaning: "보통이다. 일반적이다. 평범하다.", memory: "[한자 뜻: 一(한일), 般(일반 반)] 다른 것들과 다를 바 없이 한(一) 가지 부류(般)에 속하는 '보통의, 일반적인' 상태입니다." },
+  { hanzi: "影响", pinyin: "[yǐngxiǎng]", type: "동사", meaning: "영향을 주다[끼치다].", memory: "[한자 뜻: 影(그림자 영), 响(울릴 향)] 빛이 그림자(影)를, 소리가 울림(响)을 만들 듯 주변에 파급력을 미쳐 '영향을 주다'라는 의미입니다." },
+  { hanzi: "愿意", pinyin: "[yuànyì]", type: "동사", meaning: "동의하다. 달가워하다.", memory: "[한자 뜻: 愿(원할 원), 意(뜻의)] 마음(心) 속 본래의 뜻(意)으로 스스로 원해서 기꺼이 '달가워하다'라고 연상하세요." },
+  { hanzi: "遇到", pinyin: "[yùdào]", type: "동사", meaning: "만나다. 마주치다. 부딪치다. 부닥치다. 맞닥뜨리다. 봉착하다.", memory: "[한자 뜻: 遇(만날 우), 到(이를 도)] 길(辶)을 가다가 누군가와 우연히 맞닥뜨려(遇) 마주치는(到) 상황입니다." },
+  { hanzi: "越", pinyin: "[yuè]", type: "동사", meaning: "넘다. 뛰어넘다.", memory: "[한자 뜻: 越(넘을 월)] 힘차게 달려서(走) 장애물이나 한계를 '뛰어넘어' 간다고 기억하세요." },
+  { hanzi: "照顾", pinyin: "[zhàogù]", type: "동사", meaning: "보살피다. 돌보다. 간호하다.", memory: "[한자 뜻: 照(비출조), 顾(돌아볼 고)] 따뜻한 햇살처럼 비추어주고(照) 고개를 돌려(顾) 세심하게 '돌보고 보살핀다'고 외우세요." },
+  { hanzi: "着急", pinyin: "[zháojí]", type: "동사", meaning: "조급해하다. 안달하다. 안타까워하다. 초조해하다. 마음을 졸이다.", memory: "[한자 뜻: 着(붙을 착), 急(급할 급)] 마음(心)에 급한(急) 감정이 착 달라붙어(着) 불이 난 듯 '초조하고 다급해하는' 모습입니다." },
+  { hanzi: "照相机", pinyin: "[zhàoxiàngjī]", type: "명사", meaning: "사진기 카메라.", memory: "[한자 뜻: 照(비출조), 相(모양 상), 机(기계기)] 사람의 모습(相)을 빛으로 비추어(照) 필름에 남기는 기계(机)인 '카메라'입니다." },
+  { hanzi: "重要", pinyin: "[zhòngyào]", type: "형용사", meaning: "중요하다.", memory: "[한자 뜻: 重(무거울 중), 要(중요할 요)] 일의 비중이 무겁고(重) 꼭 필요한(要) 상태, 즉 매우 '중요하다'는 뜻입니다." },
+  { hanzi: "终于", pinyin: "[zhōngyú]", type: "부사", meaning: "마침내. 결국, 끝내.", memory: "[한자 뜻: 终(마칠 종), 于(어조사 우)] 실(糸)의 마지막 끝에 다다라 결국 일이 끝났음(终)을 나타내는 '마침내, 드디어'입니다." }
+];
+    // =========================================================================
+
+    let failSet = new Set();
+
+    function shuffleArray(array) {
+        let arr = [...array];
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+    }
+
+    function switchMode(mode) {
+        document.getElementById('tab1').classList.remove('active');
+        document.getElementById('tab2').classList.remove('active');
+        document.getElementById('mode1').classList.remove('active');
+        document.getElementById('mode2').classList.remove('active');
+        document.getElementById('tab' + mode).classList.add('active');
+        document.getElementById('mode' + mode).classList.add('active');
+        
+        if(mode === 2 && mcqDeck.length === 0) initMcq();
+    }
+
+    let chineseVoice = null;
+    function loadVoices() {
+        const voices = window.speechSynthesis.getVoices();
+        chineseVoice = voices.find(voice => voice.lang.includes('zh'));
+    }
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+        loadVoices(); 
+    }
+
+    function playAudio(event) {
+        event.stopPropagation();
+        const textToRead = cardDeck[cardIndex].hanzi;
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(textToRead);
+            utterance.lang = 'zh-CN';
+            if (chineseVoice) utterance.voice = chineseVoice;
+            utterance.rate = 0.85;
+            window.speechSynthesis.speak(utterance);
+        }
+    }
+
+    function toggleFailStatus(event) {
+        const word = cardDeck[cardIndex];
+        if (event.target.checked) failSet.add(word.hanzi);
+        else failSet.delete(word.hanzi);
+    }
+
+    /* 플래시 카드 */
+    let cardDeck = [...rawData];
+    let cardIndex = 0;
+    let isPinyinVisible = false; 
+
+    function renderCard() {
+        const word = cardDeck[cardIndex];
+        document.getElementById('cardHanzi').innerText = word.hanzi;
+        document.getElementById('cardProgress').innerText = `${cardIndex + 1} / ${cardDeck.length}`;
+        
+        const pinyinEl = document.getElementById('cardPinyin');
+        pinyinEl.innerText = word.pinyin;
+        pinyinEl.style.visibility = isPinyinVisible ? 'visible' : 'hidden';
+        
+        document.getElementById('cardType').innerText = word.type;
+        document.getElementById('cardMeaning').innerText = word.meaning;
+        document.getElementById('cardMemory').innerText = word.memory;
+        
+        document.getElementById('failCheck').checked = failSet.has(word.hanzi);
+        document.getElementById('flashcard').classList.remove('flipped');
+    }
+
+    function togglePinyin() {
+        isPinyinVisible = !isPinyinVisible;
+        const pinyinEl = document.getElementById('cardPinyin');
+        const btn = document.getElementById('togglePinyinBtn');
+        if (isPinyinVisible) {
+            pinyinEl.style.visibility = 'visible';
+            btn.innerText = '병음 끄기 👁️';
+        } else {
+            pinyinEl.style.visibility = 'hidden';
+            btn.innerText = '병음 켜기 🙈';
+        }
+    }
+
+    function hidePinyin() {
+        isPinyinVisible = false;
+        document.getElementById('togglePinyinBtn').innerText = '병음 켜기 🙈';
+    }
+
+    function toggleCard() { document.getElementById('flashcard').classList.toggle('flipped'); }
+
+    // [수정된 부분] 다음 카드로 넘길 때 앞면으로 돌아오기를 기다림
+    function nextCard() {
+        if(window.speechSynthesis) window.speechSynthesis.cancel();
+        hidePinyin();
+
+        const flashcard = document.getElementById('flashcard');
+        
+        if (flashcard.classList.contains('flipped')) {
+            flashcard.classList.remove('flipped');
+            // 애니메이션 지속시간(0.4초) 만큼 대기 후 내용 변경
+            setTimeout(() => {
+                if (cardIndex < cardDeck.length - 1) { cardIndex++; renderCard(); } 
+                else { alert('마지막 카드입니다. 다시 섞습니다.'); shuffleCards(); }
+            }, 400);
+        } else {
+            if (cardIndex < cardDeck.length - 1) { cardIndex++; renderCard(); } 
+            else { alert('마지막 카드입니다. 다시 섞습니다.'); shuffleCards(); }
+        }
+    }
+
+    // [수정된 부분] 이전 카드로 넘길 때 앞면으로 돌아오기를 기다림
+    function prevCard() {
+        if(window.speechSynthesis) window.speechSynthesis.cancel();
+        hidePinyin();
+
+        const flashcard = document.getElementById('flashcard');
+        
+        if (flashcard.classList.contains('flipped')) {
+            flashcard.classList.remove('flipped');
+            setTimeout(() => {
+                if (cardIndex > 0) { cardIndex--; renderCard(); }
+            }, 400);
+        } else {
+            if (cardIndex > 0) { cardIndex--; renderCard(); }
+        }
+    }
+
+    // 셔플 및 실패단어 불러올 때도 자연스럽게 뒤집히도록 대기 추가
+    function playFailOnly() {
+        const failList = rawData.filter(w => failSet.has(w.hanzi));
+        if (failList.length === 0) return alert('❌ 실패로 체크된 단어가 없습니다.');
+        hidePinyin();
+        
+        const flashcard = document.getElementById('flashcard');
+        const wasFlipped = flashcard.classList.contains('flipped');
+        flashcard.classList.remove('flipped');
+
+        setTimeout(() => {
+            cardDeck = shuffleArray(failList); cardIndex = 0; renderCard();
+            mcqDeck = shuffleArray(failList); mcqIndex = 0; score = 0; updateMcqUI();
+            if(document.getElementById('mode2').classList.contains('active')) loadMcqQuestion();
+            alert(`${failList.length}개의 실패 단어로 시작합니다.`);
+        }, wasFlipped ? 400 : 0);
+    }
+
+    function shuffleCards() {
+        hidePinyin();
+        
+        const flashcard = document.getElementById('flashcard');
+        const wasFlipped = flashcard.classList.contains('flipped');
+        flashcard.classList.remove('flipped');
+
+        setTimeout(() => {
+            cardDeck = shuffleArray(rawData); cardIndex = 0; renderCard();
+            mcqDeck = shuffleArray(rawData); mcqIndex = 0; score = 0; updateMcqUI();
+            if(document.getElementById('mode2').classList.contains('active')) loadMcqQuestion();
+            alert(`전체 ${rawData.length}개 단어로 다시 섞었습니다.`);
+        }, wasFlipped ? 400 : 0);
+    }
+
+    /* 4지선다형 객관식 퀴즈 (암기법 해설 기능 포함) */
+    let mcqDeck = [];
+    let mcqIndex = 0;
+    let score = 0;
+    let answered = false;
+
+    // 페이지 로드 시 원활하게 카드가 그려지게끔 초기화
+    setTimeout(() => {
+        if(rawData && rawData.length > 0) {
+            renderCard();
+        }
+    }, 100);
+
+    function initMcq() {
+        if(rawData.length === 0) return;
+        mcqDeck = shuffleArray(rawData); mcqIndex = 0; score = 0; updateMcqUI(); loadMcqQuestion();
+    }
+
+    function loadMcqQuestion() {
+        if (mcqIndex >= mcqDeck.length) {
+            document.getElementById('mcqMeaningText').innerHTML = "🎉 모든 퀴즈 완료!";
+            document.getElementById('mcqType').style.display = 'none';
+            document.getElementById('mcqOptions').innerHTML = "";
+            document.getElementById('mcqFeedback').innerHTML = `총 <b>${mcqDeck.length}</b>문제 중 <b>${score}</b>문제를 맞히셨습니다.`;
+            document.getElementById('mcqFeedbackMemory').style.display = 'none';
+            document.getElementById('mcqNextBtn').style.display = 'none';
+            return;
+        }
+
+        answered = false;
+        document.getElementById('mcqNextBtn').style.display = 'none';
+        document.getElementById('mcqFeedback').innerHTML = "";
+        document.getElementById('mcqFeedbackMemory').style.display = 'none';
+        
+        const currentQ = mcqDeck[mcqIndex];
+        document.getElementById('mcqType').innerText = currentQ.type;
+        document.getElementById('mcqType').style.display = 'inline-block';
+        document.getElementById('mcqMeaningText').innerText = currentQ.meaning;
+
+        let distractors = rawData.filter(w => w.hanzi !== currentQ.hanzi);
+        distractors = shuffleArray(distractors).slice(0, 3);
+        let options = shuffleArray([currentQ, ...distractors]);
+
+        const optionsContainer = document.getElementById('mcqOptions');
+        optionsContainer.innerHTML = "";
+
+        options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = 'mcq-btn';
+            btn.innerText = opt.hanzi;
+            btn.onclick = () => checkAnswer(btn, opt.hanzi, currentQ.hanzi, currentQ.memory);
+            optionsContainer.appendChild(btn);
+        });
+
+        updateMcqUI();
+    }
+
+    function checkAnswer(clickedBtn, selectedHanzi, correctHanzi, memoryText) {
+        if (answered) return;
+        answered = true;
+
+        const allBtns = document.querySelectorAll('.mcq-btn');
+        const feedback = document.getElementById('mcqFeedback');
+        const feedbackMemory = document.getElementById('mcqFeedbackMemory');
+
+        if (selectedHanzi === correctHanzi) {
+            clickedBtn.classList.add('correct');
+            feedback.innerHTML = "✅ 정답입니다!";
+            feedback.style.color = "#27ae60";
+            score++;
+        } else {
+            clickedBtn.classList.add('wrong');
+            feedback.innerHTML = `❌ 오답입니다. 정답은 <b>[ ${correctHanzi} ]</b> 입니다.`;
+            feedback.style.color = "#e74c3c";
+            
+            // 틀렸을 때 암기법 표시
+            feedbackMemory.innerHTML = `💡 <b>암기법:</b> ${memoryText}`;
+            feedbackMemory.style.display = 'block';
+            
+            allBtns.forEach(b => {
+                if(b.innerText === correctHanzi) b.classList.add('correct');
+            });
+        }
+
+        updateMcqUI();
+        document.getElementById('mcqNextBtn').style.display = 'block';
+    }
+
+    function loadNextMcq() { mcqIndex++; loadMcqQuestion(); }
+
+    function updateMcqUI() {
+        if(mcqIndex < mcqDeck.length) document.getElementById('mcqProgress').innerText = `문제: ${mcqIndex + 1} / ${mcqDeck.length}`;
+        document.getElementById('mcqScore').innerText = `점수: ${score} 점`;
+    }
+</script>
+</body>
+</html>
